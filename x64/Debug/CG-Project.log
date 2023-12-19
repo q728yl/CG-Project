@@ -1,0 +1,3 @@
+﻿  CG-Project.cpp
+D:\vsProject\CG-Project\CG-Project\model.h(111,20): warning C4101: “vertex_in”: 未引用的局部变量
+  CG-Project.vcxproj -> D:\vsProject\CG-Project\x64\Debug\CG-Project.exe
