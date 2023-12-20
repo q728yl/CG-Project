@@ -13,16 +13,30 @@
 #include "model.h"
 #include"light.h"
 #include <iostream>
-
+bool keyS = 0;
+struct Ball {
+    glm::vec3 position;
+    glm::vec3 velocity;
+    glm::vec3 color;
+    unsigned int textureID;
+};
+std::vector<Ball> balls;
+void drawBalls();
+void updateBallPosition();
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
 
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
-
+const unsigned int SCR_WIDTH = 2000;
+const unsigned int SCR_HEIGHT = 1600;
+const GLfloat  PI = 3.14159265358979323846f;
+const int Y_SEGMENTS = 50;
+const int X_SEGMENTS = 50;
+glm::mat4 projection;
+glm::mat4 model;
+glm::mat4 view;
 // camera
 Camera camera(glm::vec3(0.0f, 0.2f, 1.2f));
 float lastX = SCR_WIDTH / 2.0f;
@@ -157,9 +171,37 @@ int main()
     modelPositions.push_back(position3);
     modelPositions.push_back(position4);
     modelPositions.push_back(position5);
+    vector<glm::mat4> modelMatrix(5);
     for (int i = 0; i < 5; ++i) {
         Model model("model/tumbler.obj");
-        modelInstances.push_back(model);    
+        modelInstances.push_back(model);  
+        modelMatrix.push_back(glm::mat4(1.0f));
+    }
+    //30个小球
+    //std::vector<Ball> balls;
+    int ballTexture = TextureFromFile("ball.png", "./");
+    // 初始化30个小球
+    for (int i = 0; i < 30; ++i) {
+        Ball ball;
+
+        // 设置随机位置
+        float xPos = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 0.6f - 0.3f;  // 范围从-5到5
+        float yPos = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 0.3f ;
+        float zPos = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 0.6f - 0.3f;
+        ball.position = glm::vec3(xPos, yPos, zPos);
+
+        // 设置随机速度
+        float xVel = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 2.0f - 1.0f;  // 范围从-1到1
+        float yVel = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 2.0f - 1.0f;
+        float zVel = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 2.0f - 1.0f;
+        ball.velocity = glm::vec3(xVel, yVel, zVel);
+
+        ball.color = glm::vec3(1.0f, 1.0f, 1.0f);  // 设置为白色
+
+        // 加载并设置纹理ID
+        ball.textureID = ballTexture;  // 请替换为你的纹理路径
+
+        balls.push_back(ball);
     }
 
     while (!glfwWindowShouldClose(window))
@@ -182,9 +224,9 @@ int main()
         glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         //坐标变换
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        glm::mat4 view = camera.GetViewMatrix();
-        glm::mat4 model = glm::mat4(1.0f);
+        projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        view = camera.GetViewMatrix();
+        model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
         model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
         //墙体绘制
@@ -218,11 +260,11 @@ int main()
         lightShader.setVec3("viewPos", camera.Position);
     
         light.draw();
+        
         // 渲染循环中遍历所有模型实例
         for (size_t i = 0; i < modelInstances.size(); ++i) {
-            // 使用每个模型实例的独立位置创建世界变换矩阵
-            glm::mat4 modelMatrix = glm::mat4(1.0f);
-            modelMatrix = glm::translate(modelMatrix, modelPositions[i]);
+            // 使用每个模型实例的独立位置创建model矩阵，会在model基础上进行更多变换
+            modelMatrix[i] = glm::translate(model, modelPositions[i]);
 
             // 在这里，你可能还需要处理其他的世界变换，例如旋转和缩放
 
@@ -233,13 +275,14 @@ int main()
             tumblerShader.setVec3("viewPos", camera.Position);
             tumblerShader.setMat4("projection", projection);
             tumblerShader.setMat4("view", view);
-            tumblerShader.setMat4("model", modelMatrix);
+            tumblerShader.setMat4("model", modelMatrix[i]);
 
             // 渲染当前模型实例
             modelInstances[i].Draw_out(tumblerShader);
         }
 
-
+        if(keyS)
+            drawBalls();
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
@@ -261,7 +304,7 @@ void processInput(GLFWwindow* window)
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         camera.ProcessKeyboard(FORWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS)
         camera.ProcessKeyboard(BACKWARD, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
         camera.ProcessKeyboard(LEFT, deltaTime);
@@ -271,6 +314,139 @@ void processInput(GLFWwindow* window)
         camera.ProcessKeyboard(UP, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
         camera.ProcessKeyboard(DOWN, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        keyS = 1;
+    }
+        
+}
+void drawBalls()
+{
+    std::vector<glm::vec3> vertices;
+    std::vector<unsigned int> indices;
+    Shader ballShader("ball.vs", "ball.fs");
+    ballShader.use();
+    ballShader.setMat4("projection", projection);
+    ballShader.setMat4("view", view);
+    ballShader.setMat4("model", model);
+
+    unsigned int VAO, VBO, EBO;
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
+
+    glBindVertexArray(VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * 360, nullptr, GL_DYNAMIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glBindVertexArray(0);
+    for (int i = 0; i < balls.size(); ++i) {
+        vertices.clear();
+        indices.clear();
+
+        for (int lat = 0; lat <= Y_SEGMENTS; lat++) {
+            float theta = lat * PI / Y_SEGMENTS;
+            float sinTheta = sin(theta);
+            float cosTheta = cos(theta);
+
+            for (int lon = 0; lon <= X_SEGMENTS; lon++) {
+                float phi = lon * 2 * PI / X_SEGMENTS;
+                float sinPhi = sin(phi);
+                float cosPhi = cos(phi);
+
+                float x = cosPhi * sinTheta;
+                float y = cosTheta;
+                float z = sinPhi * sinTheta;
+
+                vertices.push_back(glm::vec3(balls[i].position.x + 0.01 * x, balls[i].position.y + 0.01 * y, balls[i].position.z + 0.01 * z));
+            }
+        }
+
+        for (int lat = 0; lat < Y_SEGMENTS; lat++) {
+            for (int lon = 0; lon < X_SEGMENTS; lon++) {
+                int first = lat * (X_SEGMENTS + 1) + lon;
+                int second = first + 1;
+                int third = (lat + 1) * (X_SEGMENTS + 1) + lon;
+                int fourth = third + 1;
+
+                indices.push_back(first);
+                indices.push_back(second);
+                indices.push_back(third);
+
+                indices.push_back(second);
+                indices.push_back(fourth);
+                indices.push_back(third);
+            }
+        }
+
+       // glBindBuffer(GL_ARRAY_BUFFER, VBO);
+       // glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_DYNAMIC_DRAW);
+
+       // // 使用实例化属性绑定位置数据
+       // /*glBindBuffer(GL_ARRAY_BUFFER, VBO);
+       // glBufferSubData(GL_ARRAY_BUFFER, 0, balls.size() * sizeof(glm::vec3), balls.data());
+       //*/ 
+       // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+       // glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+       // glDrawElementsInstanced(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0, balls.size());
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_DYNAMIC_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_DYNAMIC_DRAW);
+
+        glBindVertexArray(VAO);
+      
+        glDrawElementsInstanced(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0,balls.size());
+        //glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+      
+    }
+    updateBallPosition();
+    
+}
+void updateBallPosition() {
+    
+    for (int i = 0; i < balls.size(); ++i) {
+        glm::vec4 newP = projection* view* model* glm::vec4(balls[i].position, 1.0);
+        glm::vec3 newP3 = glm::vec3(newP.x , newP.y, newP.z );
+
+        balls[i].position.y -= 5 * deltaTime;
+        balls[i].position += balls[i].velocity * deltaTime;
+       
+        if (balls[i].position.x - 0.01 < -0.4) {
+            balls[i].position.x = -0.4 + 0.01;
+            balls[i].velocity.x = -balls[i].velocity.x;
+        }
+        else if (balls[i].position.x + 0.01 > 0.4) {
+            balls[i].position.x = 0.4 - 0.01;
+            balls[i].velocity.x = -balls[i].velocity.x;
+        }
+        if (balls[i].position.y - 0.01 < -0.049879f) {
+            balls[i].position.y = -0.4 + 0.01;
+            balls[i].velocity.y = -balls[i].velocity.y;
+        }
+        else if (balls[i].position.y + 0.01 > 0.4) {
+            balls[i].position.y = 0.4 - 0.01;
+            balls[i].velocity.y = -balls[i].velocity.y;
+        }
+
+        if (balls[i].position.z - 0.01 < -0.4) {
+            balls[i].position.z = -0.4 + 0.01;
+            balls[i].velocity.z = -balls[i].velocity.z;
+        }
+        else if (balls[i].position.z + 0.01 > 0.4) {
+            balls[i].position.z = 0.4 - 0.01;
+            balls[i].velocity.z = -balls[i].velocity.z;
+        }
+    }
+   
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes

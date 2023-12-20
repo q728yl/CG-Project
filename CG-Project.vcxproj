@@ -143,8 +143,14 @@
   <ItemGroup>
     <None Include="1.model_loading.fs" />
     <None Include="1.model_loading.vs" />
+    <None Include="ball.fs" />
+    <None Include="ball.vs" />
     <None Include="light.fs" />
     <None Include="light.vs" />
+    <None Include="shadow.fs" />
+    <None Include="shadow.vs" />
+    <None Include="simpleDepthShader.fs" />
+    <None Include="simpleDepthShader.vs" />
     <None Include="wall.fs" />
     <None Include="wall.vs" />
   </ItemGroup>
