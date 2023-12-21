@@ -13,6 +13,11 @@
 #include "model.h"
 #include"light.h"
 #include <iostream>
+glm::vec3 wallColor1;
+glm::vec3 wallColor2;
+glm::vec3 wallColor3;
+glm::vec3 wallColor4;
+glm::vec3 wallColor5;
 bool keyS = 0;
 struct Ball {
     glm::vec3 position;
@@ -21,8 +26,8 @@ struct Ball {
     unsigned int textureID;
 };
 std::vector<Ball> balls;
-void drawBalls();
-void updateBallPosition();
+void drawBalls(int);
+void updateBallPosition(int);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
@@ -32,8 +37,8 @@ void processInput(GLFWwindow* window);
 const unsigned int SCR_WIDTH = 2000;
 const unsigned int SCR_HEIGHT = 1600;
 const GLfloat  PI = 3.14159265358979323846f;
-const int Y_SEGMENTS = 50;
-const int X_SEGMENTS = 50;
+const int Y_SEGMENTS = 20;
+const int X_SEGMENTS = 20;
 glm::mat4 projection;
 glm::mat4 model;
 glm::mat4 view;
@@ -149,11 +154,11 @@ int main()
     Wall wall5;
     wall5.SetVerticesAndColor(wallVertices5);
     //墙体颜色设置
-    glm::vec3 wallColor1 = glm::vec3(0.2f, 0.2f, 0.3f);
-    glm::vec3 wallColor2 = glm::vec3(0.4f, 0.2f, 0.5f);
-    glm::vec3 wallColor3 = glm::vec3(0.8f, 0.5f, 0.7f);
-    glm::vec3 wallColor4 = glm::vec3(0.8f, 0.8f, 0.8f);
-    glm::vec3 wallColor5 = glm::vec3(0.8f, 0.8f, 0.8f);
+    wallColor1 = glm::vec3(0.2f, 0.2f, 0.3f);
+    wallColor2 = glm::vec3(0.4f, 0.2f, 0.5f);
+    wallColor3 = glm::vec3(0.8f, 0.5f, 0.7f);
+    wallColor4 = glm::vec3(0.8f, 0.8f, 0.8f);
+    wallColor5 = glm::vec3(0.8f, 0.8f, 0.8f);
     
     //灯
     Light light(lightPos,0.08f);
@@ -185,15 +190,15 @@ int main()
         Ball ball;
 
         // 设置随机位置
-        float xPos = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 0.6f - 0.3f;  // 范围从-5到5
+        float xPos = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 0.6f - 0.3f;  // 范围从-0.3到0.3
         float yPos = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 0.3f ;
         float zPos = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 0.6f - 0.3f;
         ball.position = glm::vec3(xPos, yPos, zPos);
 
         // 设置随机速度
-        float xVel = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 2.0f - 1.0f;  // 范围从-1到1
-        float yVel = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 2.0f - 1.0f;
-        float zVel = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 2.0f - 1.0f;
+        float xVel = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 0.3f - 0.15f;  // 范围从-0.15到0.15
+        float yVel = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 0.3f - 0.15f;
+        float zVel = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 0.3f - 0.15f;
         ball.velocity = glm::vec3(xVel, yVel, zVel);
 
         ball.color = glm::vec3(1.0f, 1.0f, 1.0f);  // 设置为白色
@@ -282,7 +287,7 @@ int main()
         }
 
         if(keyS)
-            drawBalls();
+            drawBalls(floorTexture);
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
@@ -319,15 +324,19 @@ void processInput(GLFWwindow* window)
     }
         
 }
-void drawBalls()
+void drawBalls(int floorTextureId)
 {
-    std::vector<glm::vec3> vertices;
+    std::vector<float> vertices;
     std::vector<unsigned int> indices;
     Shader ballShader("ball.vs", "ball.fs");
     ballShader.use();
     ballShader.setMat4("projection", projection);
     ballShader.setMat4("view", view);
     ballShader.setMat4("model", model);
+    //glActiveTexture(GL_TEXTURE0); // 激活纹理单元0
+    //int ballTexture = TextureFromFile("ball.png", "./");
+    //glBindTexture(GL_TEXTURE_2D, floorTextureId); // 将纹理绑定到纹理单元0
+    //ballShader.setInt("ourTexture", 0); // 或者你可以使用setUniform函数为纹理采样器设置值
 
     unsigned int VAO, VBO, EBO;
     glGenVertexArrays(1, &VAO);
@@ -337,19 +346,25 @@ void drawBalls()
     glBindVertexArray(VAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * 360, nullptr, GL_DYNAMIC_DRAW);
+    // 计算需要的总大小，每个顶点有5个float（3个坐标 + 2个纹理坐标）
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 5 * 360 * balls.size(), nullptr, GL_DYNAMIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glBindVertexArray(0);
+
     for (int i = 0; i < balls.size(); ++i) {
+        ballShader.setVec3("ourColor", balls[i].color);
         vertices.clear();
         indices.clear();
-
+        glActiveTexture(GL_TEXTURE0); // 激活纹理单元0
+        glBindTexture(GL_TEXTURE_2D, balls[i].textureID); // 将纹理绑定到纹理单元0
+        ballShader.setInt("ourTexture", 0);
         for (int lat = 0; lat <= Y_SEGMENTS; lat++) {
             float theta = lat * PI / Y_SEGMENTS;
             float sinTheta = sin(theta);
@@ -364,10 +379,18 @@ void drawBalls()
                 float y = cosTheta;
                 float z = sinPhi * sinTheta;
 
-                vertices.push_back(glm::vec3(balls[i].position.x + 0.01 * x, balls[i].position.y + 0.01 * y, balls[i].position.z + 0.01 * z));
+                float s = (float)lon / X_SEGMENTS;
+                float t = (float)lat / Y_SEGMENTS;
+
+                // 添加顶点坐标
+                vertices.push_back(balls[i].position.x + 0.01 * x);
+                vertices.push_back(balls[i].position.y + 0.01 * y);
+                vertices.push_back(balls[i].position.z + 0.01 * z);
+                // 添加纹理坐标
+                vertices.push_back(s);
+                vertices.push_back(t);
             }
         }
-
         for (int lat = 0; lat < Y_SEGMENTS; lat++) {
             for (int lon = 0; lon < X_SEGMENTS; lon++) {
                 int first = lat * (X_SEGMENTS + 1) + lon;
@@ -385,61 +408,57 @@ void drawBalls()
             }
         }
 
-       // glBindBuffer(GL_ARRAY_BUFFER, VBO);
-       // glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_DYNAMIC_DRAW);
-
-       // // 使用实例化属性绑定位置数据
-       // /*glBindBuffer(GL_ARRAY_BUFFER, VBO);
-       // glBufferSubData(GL_ARRAY_BUFFER, 0, balls.size() * sizeof(glm::vec3), balls.data());
-       //*/ 
-       // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-       // glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
-       // glDrawElementsInstanced(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0, balls.size());
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), &vertices[0], GL_DYNAMIC_DRAW);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_DYNAMIC_DRAW);
 
         glBindVertexArray(VAO);
-      
-        glDrawElementsInstanced(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0,balls.size());
-        //glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+
+        glDrawElementsInstanced(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0, balls.size());
+
         glBindVertexArray(0);
-      
     }
-    updateBallPosition();
-    
+
+    updateBallPosition(floorTextureId);
 }
-void updateBallPosition() {
+
+void updateBallPosition(int floorTextureId) {
     
     for (int i = 0; i < balls.size(); ++i) {
-        glm::vec4 newP = projection* view* model* glm::vec4(balls[i].position, 1.0);
-        glm::vec3 newP3 = glm::vec3(newP.x , newP.y, newP.z );
+       /* glm::vec4 newP = projection* view* model* glm::vec4(balls[i].position, 1.0);
+        glm::vec3 newP3 = glm::vec3(newP.x , newP.y, newP.z );*/
 
-        balls[i].position.y -= 5 * deltaTime;
+        balls[i].position.y -= 0.05 * deltaTime;
         balls[i].position += balls[i].velocity * deltaTime;
        
         if (balls[i].position.x - 0.01 < -0.4) {
             balls[i].position.x = -0.4 + 0.01;
             balls[i].velocity.x = -balls[i].velocity.x;
+            balls[i].color = wallColor2;
         }
         else if (balls[i].position.x + 0.01 > 0.4) {
             balls[i].position.x = 0.4 - 0.01;
             balls[i].velocity.x = -balls[i].velocity.x;
+            balls[i].color = wallColor3;
         }
         if (balls[i].position.y - 0.01 < -0.049879f) {
-            balls[i].position.y = -0.4 + 0.01;
+            balls[i].position.y = -0.049879f + 0.01;
             balls[i].velocity.y = -balls[i].velocity.y;
+            balls[i].color = wallColor5;
         }
         else if (balls[i].position.y + 0.01 > 0.4) {
             balls[i].position.y = 0.4 - 0.01;
             balls[i].velocity.y = -balls[i].velocity.y;
+            balls[i].color = wallColor4;
+            balls[i].textureID = floorTextureId;
         }
 
         if (balls[i].position.z - 0.01 < -0.4) {
             balls[i].position.z = -0.4 + 0.01;
             balls[i].velocity.z = -balls[i].velocity.z;
+            balls[i].color = wallColor1;
         }
         else if (balls[i].position.z + 0.01 > 0.4) {
             balls[i].position.z = 0.4 - 0.01;
