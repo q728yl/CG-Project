@@ -8,7 +8,7 @@
 #include "camera.h"
 #include "shader.h"
 #include"wall.h"
-
+#include "tumbler.h"
 #include"Mesh.h"
 #include "model.h"
 #include"light.h"
@@ -32,7 +32,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
-
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 // settings
 const unsigned int SCR_WIDTH = 2000;
 const unsigned int SCR_HEIGHT = 1600;
@@ -75,11 +75,13 @@ int main()
     }
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glfwSetCursorPosCallback(window, mouse_callback);
-    glfwSetScrollCallback(window, scroll_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
+
+    //glfwSetCursorPosCallback(window, mouse_callback);
+    //glfwSetScrollCallback(window, scroll_callback);
 
     // tell GLFW to capture our mouse
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // glad: load all OpenGL function pointers
     // ---------------------------------------
@@ -162,8 +164,6 @@ int main()
     
     //灯
     Light light(lightPos,0.08f);
-
-    /*Model ourModel("model/tumbler.obj");*/
     std::vector<Model> modelInstances;
     std::vector<glm::vec3> modelPositions;
     glm::vec3 position1(-0.2f, 0.0f,-0.2f);
@@ -176,14 +176,28 @@ int main()
     modelPositions.push_back(position3);
     modelPositions.push_back(position4);
     modelPositions.push_back(position5);
-    vector<glm::mat4> modelMatrix(5);
+    std::vector<Tumbler> tumblers;
+    Tumbler tumbler1;
+    Tumbler tumbler2;
+    Tumbler tumbler3;
+    Tumbler tumbler4;
+    Tumbler tumbler5;
+    Model tummodel("model/tumbler.obj");
+    glm::mat4 E = glm::mat4(1.0f);
     for (int i = 0; i < 5; ++i) {
-        Model model("model/tumbler.obj");
-        modelInstances.push_back(model);  
-        modelMatrix.push_back(glm::mat4(1.0f));
+        modelInstances.push_back(tummodel);
     }
+    tumbler1.setModelMatrix(glm::translate(E, modelPositions[0]));
+    tumbler2.setModelMatrix(glm::translate(E, modelPositions[1]));
+    tumbler3.setModelMatrix(glm::translate(E, modelPositions[2]));
+    tumbler4.setModelMatrix(glm::translate(E, modelPositions[3]));
+    tumbler5.setModelMatrix(glm::translate(E, modelPositions[4]));
+    tumblers.push_back(tumbler1);
+    tumblers.push_back(tumbler2);
+    tumblers.push_back(tumbler3);
+    tumblers.push_back(tumbler4);
+    tumblers.push_back(tumbler5);
     //30个小球
-    //std::vector<Ball> balls;
     int ballTexture = TextureFromFile("ball.png", "./");
     // 初始化30个小球
     for (int i = 0; i < 30; ++i) {
@@ -267,12 +281,8 @@ int main()
         light.draw();
         
         // 渲染循环中遍历所有模型实例
-        for (size_t i = 0; i < modelInstances.size(); ++i) {
+        for (size_t i = 0; i < 5; ++i) {
             // 使用每个模型实例的独立位置创建model矩阵，会在model基础上进行更多变换
-            modelMatrix[i] = glm::translate(model, modelPositions[i]);
-
-            // 在这里，你可能还需要处理其他的世界变换，例如旋转和缩放
-
             // 将世界变换矩阵传递给着色器
             tumblerShader.use();
             tumblerShader.setVec3("lightPos", lightPos);
@@ -280,7 +290,7 @@ int main()
             tumblerShader.setVec3("viewPos", camera.Position);
             tumblerShader.setMat4("projection", projection);
             tumblerShader.setMat4("view", view);
-            tumblerShader.setMat4("model", modelMatrix[i]);
+            tumblerShader.setMat4("model", tumblers[i].getModelMatrix());
 
             // 渲染当前模型实例
             modelInstances[i].Draw_out(tumblerShader);
@@ -324,6 +334,40 @@ void processInput(GLFWwindow* window)
     }
         
 }
+glm::vec3 getViewPos(int x, int y, glm::mat4 pro, glm::mat4 view)
+{
+    // 将屏幕坐标转换为NDC（标准化设备坐标）
+    float win_x = (float)x;
+    float win_y = (float)SCR_HEIGHT - (float)y - 1.0f;
+    float win_z;
+
+    // 从深度缓冲区中读取深度值
+    glReadBuffer(GL_BACK);
+    glReadPixels(x, int(win_y), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &win_z);
+
+    // 反投影屏幕坐标到世界坐标
+    glm::vec3 winCoords(win_x, win_y, win_z);
+    glm::vec4 viewport = glm::vec4(0, 0, SCR_WIDTH, SCR_HEIGHT);
+
+    glm::vec3 obj = glm::unProject(winCoords, view, pro, viewport);
+
+    return obj;
+}
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+    {
+        double xpos, ypos;
+        glfwGetCursorPos(window, &xpos, &ypos);
+
+        // 转换屏幕坐标为3D世界坐标
+        glm::vec3 worldPos = getViewPos((int)xpos, (int)ypos, projection, view);
+
+        // 输出或使用worldPos
+        std::cout << "Clicked 3D position: (" << worldPos.x << ", " << worldPos.y << ", " << worldPos.z << ")" << std::endl;
+    }
+}
+
 void drawBalls(int floorTextureId)
 {
     std::vector<float> vertices;
@@ -416,7 +460,7 @@ void drawBalls(int floorTextureId)
 
         glBindVertexArray(VAO);
 
-        glDrawElementsInstanced(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0, balls.size());
+        glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 
         glBindVertexArray(0);
     }
@@ -447,12 +491,12 @@ void updateBallPosition(int floorTextureId) {
             balls[i].position.y = -0.049879f + 0.01;
             balls[i].velocity.y = -balls[i].velocity.y;
             balls[i].color = wallColor5;
+            balls[i].textureID = floorTextureId;
         }
         else if (balls[i].position.y + 0.01 > 0.4) {
             balls[i].position.y = 0.4 - 0.01;
             balls[i].velocity.y = -balls[i].velocity.y;
             balls[i].color = wallColor4;
-            balls[i].textureID = floorTextureId;
         }
 
         if (balls[i].position.z - 0.01 < -0.4) {

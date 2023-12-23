@@ -1,53 +1,52 @@
 ﻿  CG-Project.cpp
 D:\vsProject\CG-Project\CG-Project\model.h(111,20): warning C4101: “vertex_in”: 未引用的局部变量
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(386,56): warning C4244: “参数”: 从“double”转换到“_Ty”，可能丢失数据
+D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(430,56): warning C4244: “参数”: 从“double”转换到“_Ty”，可能丢失数据
           with
           [
               _Ty=float
           ]
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(387,56): warning C4244: “参数”: 从“double”转换到“_Ty”，可能丢失数据
+D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(431,56): warning C4244: “参数”: 从“double”转换到“_Ty”，可能丢失数据
           with
           [
               _Ty=float
           ]
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(388,56): warning C4244: “参数”: 从“double”转换到“_Ty”，可能丢失数据
+D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(432,56): warning C4244: “参数”: 从“double”转换到“_Ty”，可能丢失数据
           with
           [
               _Ty=float
           ]
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(419,93): warning C4267: “参数”: 从“size_t”转换到“GLsizei”，可能丢失数据
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(419,59): warning C4267: “参数”: 从“size_t”转换到“GLsizei”，可能丢失数据
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(433,37): warning C4244: “-=”: 从“double”转换到“T”，可能丢失数据
+D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(463,50): warning C4267: “参数”: 从“size_t”转换到“GLsizei”，可能丢失数据
+D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(477,37): warning C4244: “-=”: 从“double”转换到“T”，可能丢失数据
           with
           [
               T=float
           ]
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(437,40): warning C4305: “=”: 从“double”到“T”截断
+D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(481,40): warning C4305: “=”: 从“double”到“T”截断
           with
           [
               T=float
           ]
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(442,39): warning C4305: “=”: 从“double”到“T”截断
+D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(486,39): warning C4305: “=”: 从“double”到“T”截断
           with
           [
               T=float
           ]
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(447,46): warning C4305: “=”: 从“double”到“T”截断
+D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(491,46): warning C4305: “=”: 从“double”到“T”截断
           with
           [
               T=float
           ]
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(452,39): warning C4305: “=”: 从“double”到“T”截断
+D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(497,39): warning C4305: “=”: 从“double”到“T”截断
           with
           [
               T=float
           ]
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(459,40): warning C4305: “=”: 从“double”到“T”截断
+D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(503,40): warning C4305: “=”: 从“double”到“T”截断
           with
           [
               T=float
           ]
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(464,39): warning C4305: “=”: 从“double”到“T”截断
+D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(508,39): warning C4305: “=”: 从“double”到“T”截断
           with
           [
               T=float

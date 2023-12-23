@@ -138,6 +138,7 @@
     <ClInclude Include="model.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="tumbler.h" />
     <ClInclude Include="wall.h" />
   </ItemGroup>
   <ItemGroup>
