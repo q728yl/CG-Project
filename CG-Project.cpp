@@ -13,6 +13,10 @@
 #include "model.h"
 #include"light.h"
 #include <iostream>
+std::vector<Tumbler> tumblers;
+bool isDragging = false;
+glm::vec3 lastWorldPos;
+std::vector<Model> modelInstances;
 glm::vec3 wallColor1;
 glm::vec3 wallColor2;
 glm::vec3 wallColor3;
@@ -33,9 +37,11 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
+void mouse_pos_callback(GLFWwindow* window, double x_pos, double y_pos);
+void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
 // settings
-const unsigned int SCR_WIDTH = 2000;
-const unsigned int SCR_HEIGHT = 1600;
+ unsigned int SCR_WIDTH = 1600;
+unsigned int SCR_HEIGHT = 1200;
 const GLfloat  PI = 3.14159265358979323846f;
 const int Y_SEGMENTS = 20;
 const int X_SEGMENTS = 20;
@@ -51,8 +57,6 @@ bool firstMouse = true;
 // timing7
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
-
-
 
 int main()
 {
@@ -76,13 +80,9 @@ int main()
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetMouseButtonCallback(window, mouse_button_callback);
-
-    //glfwSetCursorPosCallback(window, mouse_callback);
-    //glfwSetScrollCallback(window, scroll_callback);
-
+    glfwSetCursorPosCallback(window, cursor_position_callback);
     // tell GLFW to capture our mouse
     //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
     // glad: load all OpenGL function pointers
     // ---------------------------------------
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -90,10 +90,6 @@ int main()
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
-
-    // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
-    stbi_set_flip_vertically_on_load(true);
-
     // configure global opengl state
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
@@ -107,7 +103,6 @@ int main()
     Shader wallShader("wall.vs", "wall.fs");
     Shader lightShader("light.vs", "light.fs");
  
-
     //后墙
     std::vector<glm::vec3> wallVertices1 = {
         glm::vec3(-0.4f, -0.049879f, -0.4f),
@@ -164,7 +159,7 @@ int main()
     
     //灯
     Light light(lightPos,0.08f);
-    std::vector<Model> modelInstances;
+ 
     std::vector<glm::vec3> modelPositions;
     glm::vec3 position1(-0.2f, 0.0f,-0.2f);
     glm::vec3 position2(0.2f, 0.0f, -0.2f);
@@ -176,7 +171,7 @@ int main()
     modelPositions.push_back(position3);
     modelPositions.push_back(position4);
     modelPositions.push_back(position5);
-    std::vector<Tumbler> tumblers;
+   
     Tumbler tumbler1;
     Tumbler tumbler2;
     Tumbler tumbler3;
@@ -227,27 +222,16 @@ int main()
     {
         glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // per-frame time logic
-        // --------------------
         float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
-        /*    accumulatedTime = currentFrame - initTime;*/
-            // input
-            // -----
-        processInput(window);
+        lastFrame = currentFrame;  
         int floorTexture = TextureFromFile("floor.png", "./");
-        // render
-        // ------
-        glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         //坐标变换
         projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         view = camera.GetViewMatrix();
         model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
-        model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
+       // model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
+        //model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
         //墙体绘制
         wallShader.use();
         wallShader.setVec3("lightPos", lightPos);
@@ -280,24 +264,24 @@ int main()
     
         light.draw();
         
+        tumblerShader.use();
+        tumblerShader.setVec3("lightPos", lightPos);
+        tumblerShader.setVec3("lightColor", lightColor);
+        tumblerShader.setVec3("viewPos", camera.Position);
+        tumblerShader.setMat4("projection", projection);
+        tumblerShader.setMat4("view", view);
         // 渲染循环中遍历所有模型实例
         for (size_t i = 0; i < 5; ++i) {
-            // 使用每个模型实例的独立位置创建model矩阵，会在model基础上进行更多变换
-            // 将世界变换矩阵传递给着色器
-            tumblerShader.use();
-            tumblerShader.setVec3("lightPos", lightPos);
-            tumblerShader.setVec3("lightColor", lightColor);
-            tumblerShader.setVec3("viewPos", camera.Position);
-            tumblerShader.setMat4("projection", projection);
-            tumblerShader.setMat4("view", view);
             tumblerShader.setMat4("model", tumblers[i].getModelMatrix());
-
+          /*  glm::vec3 position = glm::vec3(tumblers[i].getModelMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+            std::cout << "tumbler " << i << " position:" << position.x << " " << position.y << " " << position.z << std::endl;*/
             // 渲染当前模型实例
             modelInstances[i].Draw_out(tumblerShader);
         }
 
         if(keyS)
             drawBalls(floorTexture);
+        processInput(window);
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
@@ -334,16 +318,18 @@ void processInput(GLFWwindow* window)
     }
         
 }
-glm::vec3 getViewPos(int x, int y, glm::mat4 pro, glm::mat4 view)
+glm::vec3 getViewPos(double x, double y, glm::mat4 pro, glm::mat4 view)
 {
     // 将屏幕坐标转换为NDC（标准化设备坐标）
     float win_x = (float)x;
-    float win_y = (float)SCR_HEIGHT - (float)y - 1.0f;
+    float win_y = (float)SCR_HEIGHT - (float)y ;
+    cout << "屏幕坐标" << win_x << " " << win_y << endl;
     float win_z;
 
     // 从深度缓冲区中读取深度值
     glReadBuffer(GL_BACK);
     glReadPixels(x, int(win_y), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &win_z);
+    std::cout << "mouse z set as " << win_z << std::endl;
 
     // 反投影屏幕坐标到世界坐标
     glm::vec3 winCoords(win_x, win_y, win_z);
@@ -353,20 +339,61 @@ glm::vec3 getViewPos(int x, int y, glm::mat4 pro, glm::mat4 view)
 
     return obj;
 }
+
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
+    //std::cout << "butt" << std::endl;
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
     {
         double xpos, ypos;
         glfwGetCursorPos(window, &xpos, &ypos);
+        std::cout << "button" <<  xpos << "  " << ypos << std::endl;
 
         // 转换屏幕坐标为3D世界坐标
-        glm::vec3 worldPos = getViewPos((int)xpos, (int)ypos, projection, view);
+        glm::vec3 worldPos = getViewPos(xpos, ypos, projection, view);
+        //tumbler包围盒与鼠标的碰撞检测
+        for (int i = 0; i < tumblers.size(); ++i) {
+            if (tumblers[i].checkMouseClicked(modelInstances[i], worldPos)) {
+                tumblers[i].setIsChecked(1);
+                cout << "tumbler " << i << " is checked" << endl;
+            }
+            else
+                tumblers[i].setIsChecked(0);
+		}
 
+        lastWorldPos = worldPos;
+
+        isDragging = true;
         // 输出或使用worldPos
         std::cout << "Clicked 3D position: (" << worldPos.x << ", " << worldPos.y << ", " << worldPos.z << ")" << std::endl;
     }
+    else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
+    {
+        isDragging = false;
+    }
 }
+void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
+{
+    if (isDragging)
+    {
+        glm::vec3 currentWorldPos = getViewPos(xpos, ypos, projection, view);
+
+        // 计算鼠标移动的增量
+        glm::vec3 delta = currentWorldPos - lastWorldPos;
+        glm::vec3 tumblerdelta(delta.x,0.0f,delta.z);
+        for (int i = 0; i < tumblers.size(); ++i){
+            if (tumblers[i].getIsChecked()) {
+                tumblers[i].setModelMatrix(glm::translate(tumblers[i].getModelMatrix(), tumblerdelta));
+            }
+        }
+        // 更新模型的位置（这只是一个简化的示例，您可能需要根据实际的模型数据结构来更新位置）
+        //modelPosition += delta;
+
+        // 更新lastWorldPos为当前位置，以便下一次迭代
+        lastWorldPos = currentWorldPos;
+    }
+}
+
 
 void drawBalls(int floorTextureId)
 {
@@ -377,18 +404,11 @@ void drawBalls(int floorTextureId)
     ballShader.setMat4("projection", projection);
     ballShader.setMat4("view", view);
     ballShader.setMat4("model", model);
-    //glActiveTexture(GL_TEXTURE0); // 激活纹理单元0
-    //int ballTexture = TextureFromFile("ball.png", "./");
-    //glBindTexture(GL_TEXTURE_2D, floorTextureId); // 将纹理绑定到纹理单元0
-    //ballShader.setInt("ourTexture", 0); // 或者你可以使用setUniform函数为纹理采样器设置值
-
     unsigned int VAO, VBO, EBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
     glGenBuffers(1, &EBO);
-
     glBindVertexArray(VAO);
-
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     // 计算需要的总大小，每个顶点有5个float（3个坐标 + 2个纹理坐标）
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 5 * 360 * balls.size(), nullptr, GL_DYNAMIC_DRAW);
@@ -474,7 +494,7 @@ void updateBallPosition(int floorTextureId) {
        /* glm::vec4 newP = projection* view* model* glm::vec4(balls[i].position, 1.0);
         glm::vec3 newP3 = glm::vec3(newP.x , newP.y, newP.z );*/
 
-        balls[i].position.y -= 0.05 * deltaTime;
+        balls[i].velocity.y -= 0.05 * deltaTime;
         balls[i].position += balls[i].velocity * deltaTime;
        
         if (balls[i].position.x - 0.01 < -0.4) {
@@ -519,6 +539,9 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     // make sure the viewport matches the new window dimensions; note that width and 
     // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
+    SCR_WIDTH= width;
+    SCR_HEIGHT = height;
+    
 }
 
 // glfw: whenever the mouse moves, this callback is called
@@ -549,4 +572,9 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     camera.ProcessMouseScroll(static_cast<float>(yoffset));
+}
+
+void mouse_pos_callback(GLFWwindow* window, double x_pos, double y_pos)
+{
+    std::cout << "move" << x_pos << " " << y_pos << std::endl;
 }

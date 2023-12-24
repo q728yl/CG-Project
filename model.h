@@ -23,6 +23,32 @@
 #include <vector>
 
 using namespace std;
+struct BoundingBox {
+    float minX;  // 存储最小的 x 值
+    float minY;  // 存储最小的 y 值
+    float minZ;  // 存储最小的 z 值
+
+    float maxX;  // 存储最大的 x 值
+    float maxY;  // 存储最大的 y 值
+    float maxZ;  // 存储最大的 z 值
+
+    // 构造函数
+    // 构造函数
+    BoundingBox() :
+        minX(FLT_MAX), minY(FLT_MAX), minZ(FLT_MAX),
+        maxX(-FLT_MAX), maxY(-FLT_MAX), maxZ(-FLT_MAX) {}
+
+    // 更新包围盒
+    void update(const glm::vec3& vertex) {
+        minX = std::min(minX, vertex.x);
+        minY = std::min(minY, vertex.y);
+        minZ = std::min(minZ, vertex.z);
+
+        maxX = std::max(maxX, vertex.x);
+        maxY = std::max(maxY, vertex.y);
+        maxZ = std::max(maxZ, vertex.z);
+    }
+};
 
 unsigned int TextureFromFile(const char* path, const string& directory, bool gamma = false);
 class Model
@@ -35,6 +61,7 @@ public:
     string directory;
     //float miny = 3;
     bool gammaCorrection;
+    BoundingBox boundingBox; // 每个模型的包围盒
     // constructor, expects a filepath to a 3D model.
     Model(string const& path, bool gamma = false) : gammaCorrection(gamma)
     {
@@ -108,7 +135,6 @@ private:
         for (unsigned int i = 0; i < mesh->mNumVertices; i++)
         {
             Vertex vertex_out;
-            Vertex vertex_in;
             glm::vec3 vector; // we declare a placeholder vector since assimp uses its own vector class that doesn't directly convert to glm's vec3 class so we transfer the data to this placeholder glm::vec3 first.
             // positions
             vector.x = mesh->mVertices[i].x;
@@ -116,6 +142,7 @@ private:
             /*if(vector.y < miny) miny = vector.y;
             cout<<miny<<endl;*/
             vector.z = mesh->mVertices[i].z;
+            boundingBox.update(vector);
             vertex_out.Position = vector;
             //vertex_in.Position = vector - (distance * glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z));
             // normals
@@ -154,8 +181,6 @@ private:
                 vertex_out.TexCoords = glm::vec2(0.0f, 0.0f);
                 //vertex_in.TexCoords = glm::vec2(0.0f, 0.0f);
             }
-
-
             vertices_out.push_back(vertex_out);
             //vertices_in.push_back(vertex_in);
         }
@@ -169,13 +194,6 @@ private:
         }
         // process materials
         aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-        // we assume a convention for sampler names in the shaders. Each diffuse texture should be named
-        // as 'texture_diffuseN' where N is a sequential number ranging from 1 to MAX_SAMPLER_NUMBER. 
-        // Same applies to other texture as the following list summarizes:
-        // diffuse: texture_diffuseN
-        // specular: texture_specularN
-        // normal: texture_normalN
-
         // 1. diffuse maps
         vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
         textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());

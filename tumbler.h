@@ -1,11 +1,12 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
+#include "model.h"
 class Tumbler {
 private:
     glm::vec3 angularVelocity;  // 角速度
     glm::vec3 linearVelocity;   // 速度
     glm::mat4 modelMatrix;      // 模型矩阵
+    bool isChecked{0};
 
 public:
     // 构造函数
@@ -28,9 +29,25 @@ public:
     void setModelMatrix(const glm::mat4& mMatrix) { modelMatrix = mMatrix; }
     // 更新模型矩阵的函数（例如，基于当前速度和角速度）
     void updateModelMatrix(float deltaTime) {
-        // 例如，基于角速度和线速度来更新模型矩阵
-        // 这里只是一个简化的示例，您可能需要根据实际需求进行调整
         modelMatrix = glm::rotate(modelMatrix, glm::length(angularVelocity) * deltaTime, angularVelocity);
         modelMatrix = glm::translate(modelMatrix, linearVelocity * deltaTime);
     }
+    bool getIsChecked() const { return isChecked; }
+    void setIsChecked(bool check) { isChecked = check; }
+    //使用model的包围盒进行碰撞检测
+    bool checkMouseClicked(Model& model, glm::vec3 mousePosition) {
+        // 检查鼠标位置是否在模型的包围盒内
+        //将包围盒经过模型矩阵变换后再进行检测
+        if (mousePosition.y > 0.00494931f) {
+            return 0;
+        }
+        glm::vec4 min = modelMatrix * glm::vec4(model.boundingBox.minX, model.boundingBox.minY, model.boundingBox.minZ, 1.0f);
+        glm::vec4 max = modelMatrix * glm::vec4(model.boundingBox.maxX, model.boundingBox.maxY, model.boundingBox.maxZ, 1.0f);
+
+        return (mousePosition.x >= min.x && mousePosition.x <= max.x &&
+            mousePosition.y >= min.y && mousePosition.y <= max.y &&
+            mousePosition.z >= min.z && mousePosition.z <= max.z);
+
+    }
+    
 };
