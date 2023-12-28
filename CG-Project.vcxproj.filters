@@ -50,6 +50,9 @@
     <ClInclude Include="tumbler.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="ball.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="1.model_loading.fs" />

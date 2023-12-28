@@ -132,6 +132,7 @@
     <ClCompile Include="model.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ball.h" />
     <ClInclude Include="camera.h" />
     <ClInclude Include="light.h" />
     <ClInclude Include="Mesh.h" />

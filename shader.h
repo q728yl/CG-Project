@@ -5,7 +5,7 @@
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
-
+#include <glm/gtc/type_ptr.hpp>
 #include <string>
 #include <fstream>
 #include <sstream>
@@ -165,6 +165,36 @@ public:
     {
         glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
     }
+    void setMatrix4fArray(const std::string& name, unsigned count, const glm::mat4* value) const
+    {
+        GLint location = glGetUniformLocation(ID, name.c_str());
+        if (location != -1) {
+            glUniformMatrix4fv(location, count, GL_FALSE, glm::value_ptr(value[0]));
+        }
+        else {
+            std::cout << "Fail to find uniform " << name << std::endl;
+        }
+    }
+    void setVec3Array(const std::string& name, unsigned count, const glm::vec3* value) const
+    {
+		GLint location = glGetUniformLocation(ID, name.c_str());
+        if (location != -1) {
+			glUniform3fv(location, count, glm::value_ptr(value[0]));
+		}
+        else {
+			std::cout << "Fail to find uniform " << name << std::endl;
+		}
+	}
+    void setIntArr(const std::string& name, unsigned count, const int* value) const
+    {
+		GLint location = glGetUniformLocation(ID, name.c_str());
+        if (location != -1) {
+			glUniform1iv(location, count, value);
+		}
+        else {
+			std::cout << "Fail to find uniform " << name << std::endl;
+		}
+	}
 
 private:
     // utility function for checking shader compilation/linking errors.

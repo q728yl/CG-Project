@@ -32,6 +32,21 @@ struct BoundingBox {
     float maxY;  // 存储最大的 y 值
     float maxZ;  // 存储最大的 z 值
 
+    //将八个顶点列出
+ /*   vector<glm::vec3>vers;*/
+
+    vector<glm::vec3> getVertices() {
+		vector<glm::vec3> vers;
+		vers.push_back(glm::vec3(minX, minY, minZ));
+		vers.push_back(glm::vec3(minX, minY, maxZ));
+		vers.push_back(glm::vec3(minX, maxY, minZ));
+		vers.push_back(glm::vec3(minX, maxY, maxZ));
+		vers.push_back(glm::vec3(maxX, minY, minZ));
+		vers.push_back(glm::vec3(maxX, minY, maxZ));
+		vers.push_back(glm::vec3(maxX, maxY, minZ));
+		vers.push_back(glm::vec3(maxX, maxY, maxZ));
+		return vers;
+	}
     // 构造函数
     // 构造函数
     BoundingBox() :
@@ -47,6 +62,7 @@ struct BoundingBox {
         maxX = std::max(maxX, vertex.x);
         maxY = std::max(maxY, vertex.y);
         maxZ = std::max(maxZ, vertex.z);
+
     }
 };
 

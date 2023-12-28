@@ -1,54 +1,43 @@
 ﻿  CG-Project.cpp
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(331,18): warning C4244: “参数”: 从“double”转换到“GLint”，可能丢失数据
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(450,56): warning C4244: “参数”: 从“double”转换到“_Ty”，可能丢失数据
-          with
-          [
-              _Ty=float
-          ]
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(451,56): warning C4244: “参数”: 从“double”转换到“_Ty”，可能丢失数据
-          with
-          [
-              _Ty=float
-          ]
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(452,56): warning C4244: “参数”: 从“double”转换到“_Ty”，可能丢失数据
-          with
-          [
-              _Ty=float
-          ]
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(483,50): warning C4267: “参数”: 从“size_t”转换到“GLsizei”，可能丢失数据
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(497,37): warning C4244: “-=”: 从“double”转换到“T”，可能丢失数据
+D:\vsProject\CG-Project\CG-Project\ball.h(27,31): warning C4244: “-=”: 从“double”转换到“T”，可能丢失数据
           with
           [
               T=float
           ]
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(501,40): warning C4305: “=”: 从“double”到“T”截断
+D:\vsProject\CG-Project\CG-Project\ball.h(30,34): warning C4305: “=”: 从“double”到“T”截断
           with
           [
               T=float
           ]
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(506,39): warning C4305: “=”: 从“double”到“T”截断
+D:\vsProject\CG-Project\CG-Project\ball.h(35,33): warning C4305: “=”: 从“double”到“T”截断
           with
           [
               T=float
           ]
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(511,46): warning C4305: “=”: 从“double”到“T”截断
+D:\vsProject\CG-Project\CG-Project\ball.h(40,40): warning C4305: “=”: 从“double”到“T”截断
           with
           [
               T=float
           ]
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(517,39): warning C4305: “=”: 从“double”到“T”截断
+D:\vsProject\CG-Project\CG-Project\ball.h(46,33): warning C4305: “=”: 从“double”到“T”截断
           with
           [
               T=float
           ]
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(523,40): warning C4305: “=”: 从“double”到“T”截断
+D:\vsProject\CG-Project\CG-Project\ball.h(52,34): warning C4305: “=”: 从“double”到“T”截断
           with
           [
               T=float
           ]
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(528,39): warning C4305: “=”: 从“double”到“T”截断
+D:\vsProject\CG-Project\CG-Project\ball.h(57,33): warning C4305: “=”: 从“double”到“T”截断
           with
           [
               T=float
           ]
+D:\vsProject\CG-Project\CG-Project\tumbler.h(10,31): warning C4305: “初始化”: 从“double”到“float”截断
+D:\vsProject\CG-Project\CG-Project\tumbler.h(302,2): warning C4091: “extern ”: 没有声明变量时忽略“Tumbler”的左侧
+D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(41,18): warning C4305: “初始化”: 从“double”到“float”截断
+D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(440,18): warning C4244: “参数”: 从“double”转换到“GLint”，可能丢失数据
+D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(586,89): warning C4267: “参数”: 从“size_t”转换到“GLsizei”，可能丢失数据
+D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(586,55): warning C4267: “参数”: 从“size_t”转换到“GLsizei”，可能丢失数据
   CG-Project.vcxproj -> D:\vsProject\CG-Project\x64\Debug\CG-Project.exe

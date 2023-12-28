@@ -12,7 +12,23 @@
 #include"Mesh.h"
 #include "model.h"
 #include"light.h"
+#include "ball.h"
 #include <iostream>
+struct UBOData {
+    glm::mat4 modelMatrixs[30];
+    glm::vec3 colors[30];
+    int textureIds[30];
+};
+float centerPointy = 0.00494931f;
+float floorY = -0.049879f;
+
+glm::vec3 gravityPoint = glm::vec3(0.0f, floorY/2, 0.0f);//重心
+
+glm::vec3 centerPoint = glm::vec3(0.0f, centerPointy, 0.0f);//切分点
+
+
+int floorTexture; 
+int ballTexture; 
 std::vector<Tumbler> tumblers;
 bool isDragging = false;
 glm::vec3 lastWorldPos;
@@ -22,16 +38,12 @@ glm::vec3 wallColor2;
 glm::vec3 wallColor3;
 glm::vec3 wallColor4;
 glm::vec3 wallColor5;
+float ballRadius = 0.01;
 bool keyS = 0;
-struct Ball {
-    glm::vec3 position;
-    glm::vec3 velocity;
-    glm::vec3 color;
-    unsigned int textureID;
-};
+std::vector<float> vertices;
+std::vector<unsigned int> indices;
 std::vector<Ball> balls;
-void drawBalls(int);
-void updateBallPosition(int);
+void drawBalls(int,unsigned int, Shader);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
@@ -102,12 +114,13 @@ int main()
     Shader tumblerShader("1.model_loading.vs", "1.model_loading.fs");
     Shader wallShader("wall.vs", "wall.fs");
     Shader lightShader("light.vs", "light.fs");
+    Shader ballShader("ball.vs", "ball.fs");
  
     //后墙
     std::vector<glm::vec3> wallVertices1 = {
-        glm::vec3(-0.4f, -0.049879f, -0.4f),
+        glm::vec3(-0.4f,floorY, -0.4f),
         glm::vec3(-0.4f, 0.4f, -0.4f),
-        glm::vec3(0.4f, -0.049879f, -0.4f),
+        glm::vec3(0.4f, floorY, -0.4f),
         glm::vec3(0.4f, 0.4f, -0.4f),
     };
     Wall wall1;
@@ -116,18 +129,18 @@ int main()
     //左墙
     std::vector<glm::vec3> wallVertices2 = {
         glm::vec3(-0.4f, 0.4f, -0.4f),
-        glm::vec3(-0.4f, -0.049879f, -0.4f),
+        glm::vec3(-0.4f, floorY, -0.4f),
         glm::vec3(-0.4f, 0.4f, 0.4f),
-        glm::vec3(-0.4f, -0.049879f, 0.4f)
+        glm::vec3(-0.4f, floorY, 0.4f)
     };
     Wall wall2;
     wall2.SetVerticesAndColor(wallVertices2);
     //右墙
     std::vector<glm::vec3> wallVertices3 = {
         glm::vec3(0.4f, 0.4f, -0.4f),
-        glm::vec3(0.4f, -0.049879f, -0.4f),
+        glm::vec3(0.4f, floorY, -0.4f),
         glm::vec3(0.4f, 0.4f, 0.4f),
-        glm::vec3(0.4f, -0.049879f, 0.4f)
+        glm::vec3(0.4f, floorY, 0.4f)
     };
     Wall wall3;
     wall3.SetVerticesAndColor(wallVertices3);
@@ -143,10 +156,10 @@ int main()
     wall4.SetVerticesAndColor(wallVertices4);
     //地板
     std::vector<glm::vec3> wallVertices5 = {
-       glm::vec3(0.4f, -0.049879f, 0.4f),
-       glm::vec3(0.4f, -0.049879f, -0.4f),
-       glm::vec3(-0.4f, -0.049879f, 0.4f),
-       glm::vec3(-0.4f, -0.049879f, -0.4f)
+       glm::vec3(0.4f, floorY, 0.4f),
+       glm::vec3(0.4f, floorY, -0.4f),
+       glm::vec3(-0.4f, floorY, 0.4f),
+       glm::vec3(-0.4f,floorY, -0.4f)
     };
     Wall wall5;
     wall5.SetVerticesAndColor(wallVertices5);
@@ -193,7 +206,8 @@ int main()
     tumblers.push_back(tumbler4);
     tumblers.push_back(tumbler5);
     //30个小球
-    int ballTexture = TextureFromFile("ball.png", "./");
+    floorTexture = TextureFromFile("floor.png", "./");
+    ballTexture = TextureFromFile("ball.png", "./");
     // 初始化30个小球
     for (int i = 0; i < 30; ++i) {
         Ball ball;
@@ -214,9 +228,89 @@ int main()
 
         // 加载并设置纹理ID
         ball.textureID = ballTexture;  // 请替换为你的纹理路径
+        ball.modelMatrix = glm::translate(glm::mat4(1.0f), ball.position);
 
         balls.push_back(ball);
     }
+   
+    unsigned int ballVAO, ballVBO, ballEBO;
+    //unsigned int ubo;
+    //glGenBuffers(1, &ubo);
+    //glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+    //glBufferData(GL_UNIFORM_BUFFER, sizeof(UBOData), nullptr, GL_DYNAMIC_DRAW);
+    //// 将UBO绑定到绑定点0
+    //GLuint bindingPoint = 0;
+    //glBindBufferBase(GL_UNIFORM_BUFFER, bindingPoint, ubo);
+    //glBindBuffer(GL_UNIFORM_BUFFER, 0);  // 解绑定
+    glGenVertexArrays(1, &ballVAO);
+    glGenBuffers(1, &ballVBO);
+    glGenBuffers(1, &ballEBO);
+    glBindVertexArray(ballVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, ballVBO);
+    // 计算需要的总大小，每个顶点有5个float（3个坐标 + 2个纹理坐标）
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 5 * 360, nullptr, GL_DYNAMIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ballEBO);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glBindVertexArray(0);
+
+
+    for (int lat = 0; lat <= Y_SEGMENTS; lat++) {
+        float theta = lat * PI / Y_SEGMENTS;
+        float sinTheta = sin(theta);
+        float cosTheta = cos(theta);
+
+        for (int lon = 0; lon <= X_SEGMENTS; lon++) {
+            float phi = lon * 2 * PI / X_SEGMENTS;
+            float sinPhi = sin(phi);
+            float cosPhi = cos(phi);
+
+            float x = cosPhi * sinTheta;
+            float y = cosTheta;
+            float z = sinPhi * sinTheta;
+
+            float s = (float)lon / X_SEGMENTS;
+            float t = (float)lat / Y_SEGMENTS;
+
+            // 添加顶点坐标
+            vertices.push_back(ballRadius * x);
+            vertices.push_back(ballRadius * y);
+            vertices.push_back(ballRadius * z);
+            // 添加纹理坐标
+            vertices.push_back(s);
+            vertices.push_back(t);
+        }
+    }
+    for (int lat = 0; lat < Y_SEGMENTS; lat++) {
+        for (int lon = 0; lon < X_SEGMENTS; lon++) {
+            int first = lat * (X_SEGMENTS + 1) + lon;
+            int second = first + 1;
+            int third = (lat + 1) * (X_SEGMENTS + 1) + lon;
+            int fourth = third + 1;
+
+            indices.push_back(first);
+            indices.push_back(second);
+            indices.push_back(third);
+
+            indices.push_back(second);
+            indices.push_back(fourth);
+            indices.push_back(third);
+        }
+    }
+
+    glBindBuffer(GL_ARRAY_BUFFER, ballVBO);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), &vertices[0], GL_DYNAMIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ballEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_DYNAMIC_DRAW);
+ 
+
+
 
     while (!glfwWindowShouldClose(window))
     {
@@ -225,7 +319,7 @@ int main()
         float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;  
-        int floorTexture = TextureFromFile("floor.png", "./");
+    
         //坐标变换
         projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         view = camera.GetViewMatrix();
@@ -277,10 +371,25 @@ int main()
             std::cout << "tumbler " << i << " position:" << position.x << " " << position.y << " " << position.z << std::endl;*/
             // 渲染当前模型实例
             modelInstances[i].Draw_out(tumblerShader);
+            //没正在被鼠标点击的需要更新位置状态
+            if (tumblers[i].getCheckedValue() == 0) {
+                cout << i << "没被点击" << endl;
+                tumblers[i].updateTumbler(modelInstances[i]);
+            }
         }
 
-        if(keyS)
-            drawBalls(floorTexture);
+        if (keyS) {
+            ballShader.use();
+            ballShader.setMat4("projection", projection);
+            ballShader.setMat4("view", view);
+            drawBalls(floorTexture,ballVAO,ballShader);
+            for (size_t i = 0; i < tumblers.size(); ++i) {
+                tumblers[i].checkBallCollapsing(modelInstances[i]);
+            }
+        }
+        
+      
+           
         processInput(window);
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -353,12 +462,17 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
         glm::vec3 worldPos = getViewPos(xpos, ypos, projection, view);
         //tumbler包围盒与鼠标的碰撞检测
         for (int i = 0; i < tumblers.size(); ++i) {
-            if (tumblers[i].checkMouseClicked(modelInstances[i], worldPos)) {
-                tumblers[i].setIsChecked(1);
+            int checkedValue = tumblers[i].checkMouseClicked(modelInstances[i], worldPos);
+            if (checkedValue !=0) {
+                tumblers[i].setCheckedValue(checkedValue);
                 cout << "tumbler " << i << " is checked" << endl;
             }
-            else
-                tumblers[i].setIsChecked(0);
+            else {
+
+                tumblers[i].setCheckedValue(0);
+               
+            }
+               
 		}
 
         lastWorldPos = worldPos;
@@ -370,7 +484,22 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
     {
         isDragging = false;
+        for (int i = 0; i < tumblers.size(); ++i) {
+            tumblers[i].setCheckedValue(0);
+        }
+
+        
     }
+
+}
+float computeAngle(const glm::vec3& p0, const glm::vec3& p1, const glm::vec3& p2) {
+    glm::vec3 v1 = p1 - p0;
+    glm::vec3 v2 = p2 - p0;
+
+    float dotProduct = glm::dot(v1, v2);
+    float lengthProduct = glm::length(v1) * glm::length(v2);
+
+    return glm::acos(dotProduct / lengthProduct);
 }
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
@@ -380,157 +509,88 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 
         // 计算鼠标移动的增量
         glm::vec3 delta = currentWorldPos - lastWorldPos;
+        std::cout<<"鼠标移动x"<<delta.x<<" y"<<delta.y<<" z"<<delta.z<<endl;
         glm::vec3 tumblerdelta(delta.x,0.0f,delta.z);
         for (int i = 0; i < tumblers.size(); ++i){
-            if (tumblers[i].getIsChecked()) {
+            if (tumblers[i].getCheckedValue()==2) {
+                //平移
                 tumblers[i].setModelMatrix(glm::translate(tumblers[i].getModelMatrix(), tumblerdelta));
             }
-        }
-        // 更新模型的位置（这只是一个简化的示例，您可能需要根据实际的模型数据结构来更新位置）
-        //modelPosition += delta;
+            if (tumblers[i].getCheckedValue() == 1) {
+                //旋转
+                // 计算鼠标拖动向量与重心构成的平面的法线
+                glm::vec3 myGraPoint = glm::vec3(tumblers[i].getModelMatrix() * glm::vec4(gravityPoint, 1.0f));
+                glm::vec3 myGraPointVector = glm::vec3(tumblers[i].getModelMatrix() * glm::vec4(gravityPoint, 1.0f)) -
+                    glm::vec3(tumblers[i].getModelMatrix() * glm::vec4(0, floorY, 0, 1.0f));
 
-        // 更新lastWorldPos为当前位置，以便下一次迭代
+                glm::vec3 normal = glm::cross(myGraPointVector, delta); // 直接使用交叉乘积
+                glm::normalize(normal);  // 确保法线是单位向量
+
+                float angle = computeAngle(myGraPoint, currentWorldPos, lastWorldPos);
+                cout << "需要旋转的角度" << angle << endl;
+
+                // 检查旋转角度，如果大于89°，则不旋转
+                if (angle > glm::radians(89.0f)) {
+                    angle = 0.0f;
+                }
+
+                glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), angle, normal);
+
+                tumblers[i].setModelMatrix(tumblers[i].getModelMatrix() * rotationMatrix);
+                tumblers[i].upToFloor(modelInstances[i]);
+            }
+
+        }
         lastWorldPos = currentWorldPos;
     }
 }
-
-
-void drawBalls(int floorTextureId)
+void drawBalls(int floorTextureId,unsigned int ballVAO,Shader ballShader)
 {
-    std::vector<float> vertices;
-    std::vector<unsigned int> indices;
-    Shader ballShader("ball.vs", "ball.fs");
-    ballShader.use();
-    ballShader.setMat4("projection", projection);
-    ballShader.setMat4("view", view);
-    ballShader.setMat4("model", model);
-    unsigned int VAO, VBO, EBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    // 计算需要的总大小，每个顶点有5个float（3个坐标 + 2个纹理坐标）
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 5 * 360 * balls.size(), nullptr, GL_DYNAMIC_DRAW);
+    // 绑定纹理
+    glActiveTexture(GL_TEXTURE1);  // 选择纹理单元
+    glBindTexture(GL_TEXTURE_2D, ballTexture);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glActiveTexture(GL_TEXTURE2);  // 选择另一个纹理单元
+    glBindTexture(GL_TEXTURE_2D, floorTexture);
+    // 设置纹理采样器的值
+    ballShader.setInt("ballTextureSampler", 1);  // 0 对应于GL_TEXTURE0
+    ballShader.setInt("floorTextureSampler", 2); // 1 对应于GL_TEXTURE1
+    //绑定ballVAO
+    glBindVertexArray(ballVAO);
 
+    //ballShader.use();
+ /*   unsigned int uniformBlockIndex = glGetUniformBlockIndex(ballShader.ID,"UBO");
+    if (uniformBlockIndex != GL_INVALID_INDEX) {
+        glUniformBlockBinding(ballShader.ID, uniformBlockIndex, 0);
+    }*/
+
+    UBOData uboData;
+    vector<glm::mat4> modelMatrixs;
+    vector<glm::vec3> colors;
+    vector<unsigned int> textureIDs;
+    for (int i = 0; i < balls.size(); ++i) {
+        balls[i].updateBallPosition(floorTextureId);
+        uboData.modelMatrixs[i] = balls[i].modelMatrix;
+        uboData.colors[i] = balls[i].color;
+        if (uboData.colors[i] == glm::vec3(0.0f, 0.0f, 0.0f)) {
+            std::cout << "black" << std::endl;
+        }
+        uboData.textureIds[i] = (balls[i].textureID== ballTexture)?0:1;
+    }   
+    ballShader.setMatrix4fArray("modelMatrixs", 30, uboData.modelMatrixs);
+    ballShader.setVec3Array("colors", 30, uboData.colors);
+    ballShader.setIntArr("textureIds", 30, uboData.textureIds);
+    // 将balls的vector modelMatrixs传入shader
+   /* glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(UBOData), &uboData);*/
+    glDrawElementsInstanced(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0, balls.size());
+    //glBindBuffer(GL_UNIFORM_BUFFER, 0);  // 解绑定
     glBindVertexArray(0);
+        
 
-    for (int i = 0; i < balls.size(); ++i) {
-        ballShader.setVec3("ourColor", balls[i].color);
-        vertices.clear();
-        indices.clear();
-        glActiveTexture(GL_TEXTURE0); // 激活纹理单元0
-        glBindTexture(GL_TEXTURE_2D, balls[i].textureID); // 将纹理绑定到纹理单元0
-        ballShader.setInt("ourTexture", 0);
-        for (int lat = 0; lat <= Y_SEGMENTS; lat++) {
-            float theta = lat * PI / Y_SEGMENTS;
-            float sinTheta = sin(theta);
-            float cosTheta = cos(theta);
-
-            for (int lon = 0; lon <= X_SEGMENTS; lon++) {
-                float phi = lon * 2 * PI / X_SEGMENTS;
-                float sinPhi = sin(phi);
-                float cosPhi = cos(phi);
-
-                float x = cosPhi * sinTheta;
-                float y = cosTheta;
-                float z = sinPhi * sinTheta;
-
-                float s = (float)lon / X_SEGMENTS;
-                float t = (float)lat / Y_SEGMENTS;
-
-                // 添加顶点坐标
-                vertices.push_back(balls[i].position.x + 0.01 * x);
-                vertices.push_back(balls[i].position.y + 0.01 * y);
-                vertices.push_back(balls[i].position.z + 0.01 * z);
-                // 添加纹理坐标
-                vertices.push_back(s);
-                vertices.push_back(t);
-            }
-        }
-        for (int lat = 0; lat < Y_SEGMENTS; lat++) {
-            for (int lon = 0; lon < X_SEGMENTS; lon++) {
-                int first = lat * (X_SEGMENTS + 1) + lon;
-                int second = first + 1;
-                int third = (lat + 1) * (X_SEGMENTS + 1) + lon;
-                int fourth = third + 1;
-
-                indices.push_back(first);
-                indices.push_back(second);
-                indices.push_back(third);
-
-                indices.push_back(second);
-                indices.push_back(fourth);
-                indices.push_back(third);
-            }
-        }
-
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), &vertices[0], GL_DYNAMIC_DRAW);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_DYNAMIC_DRAW);
-
-        glBindVertexArray(VAO);
-
-        glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-
-        glBindVertexArray(0);
-    }
-
-    updateBallPosition(floorTextureId);
 }
 
-void updateBallPosition(int floorTextureId) {
-    
-    for (int i = 0; i < balls.size(); ++i) {
-       /* glm::vec4 newP = projection* view* model* glm::vec4(balls[i].position, 1.0);
-        glm::vec3 newP3 = glm::vec3(newP.x , newP.y, newP.z );*/
 
-        balls[i].velocity.y -= 0.05 * deltaTime;
-        balls[i].position += balls[i].velocity * deltaTime;
-       
-        if (balls[i].position.x - 0.01 < -0.4) {
-            balls[i].position.x = -0.4 + 0.01;
-            balls[i].velocity.x = -balls[i].velocity.x;
-            balls[i].color = wallColor2;
-        }
-        else if (balls[i].position.x + 0.01 > 0.4) {
-            balls[i].position.x = 0.4 - 0.01;
-            balls[i].velocity.x = -balls[i].velocity.x;
-            balls[i].color = wallColor3;
-        }
-        if (balls[i].position.y - 0.01 < -0.049879f) {
-            balls[i].position.y = -0.049879f + 0.01;
-            balls[i].velocity.y = -balls[i].velocity.y;
-            balls[i].color = wallColor5;
-            balls[i].textureID = floorTextureId;
-        }
-        else if (balls[i].position.y + 0.01 > 0.4) {
-            balls[i].position.y = 0.4 - 0.01;
-            balls[i].velocity.y = -balls[i].velocity.y;
-            balls[i].color = wallColor4;
-        }
-
-        if (balls[i].position.z - 0.01 < -0.4) {
-            balls[i].position.z = -0.4 + 0.01;
-            balls[i].velocity.z = -balls[i].velocity.z;
-            balls[i].color = wallColor1;
-        }
-        else if (balls[i].position.z + 0.01 > 0.4) {
-            balls[i].position.z = 0.4 - 0.01;
-            balls[i].velocity.z = -balls[i].velocity.z;
-        }
-    }
-   
-}
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 // ---------------------------------------------------------------------------------------------
