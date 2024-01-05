@@ -19,6 +19,7 @@ struct UBOData {
     glm::mat4 modelMatrixs[30];
     glm::vec3 colors[30];
     int textureIds[30];
+    int shouldDraw[30];
 };
 
 
@@ -43,6 +44,7 @@ glm::vec3 endMousePoint;
 
 int floorTexture; 
 int ballTexture; 
+int ashTexture;
 std::vector<Tumbler> tumblers;
 bool isDragging = false;
 glm::vec3 lastWorldPos;
@@ -224,6 +226,7 @@ int main()
     //30个小球
     floorTexture = TextureFromFile("floor.png", "./");
     ballTexture = TextureFromFile("ball.png", "./");
+    ashTexture  = TextureFromFile("ash.png", "./");
     // 初始化30个小球
     for (int i = 0; i < 30; ++i) {
         Ball ball;
@@ -241,7 +244,7 @@ int main()
         ball.velocity = glm::vec3(xVel, yVel, zVel);
 
         ball.color = glm::vec3(1.0f, 1.0f, 1.0f);  // 设置为白色
-
+        ball.shouldDraw = 1;
         // 加载并设置纹理ID
         ball.textureID = ballTexture;  // 请替换为你的纹理路径
         ball.modelMatrix = glm::translate(glm::mat4(1.0f), ball.position);
@@ -582,17 +585,15 @@ void drawBalls(int floorTextureId,unsigned int ballVAO,Shader ballShader)
 
     glActiveTexture(GL_TEXTURE2);  // 选择另一个纹理单元
     glBindTexture(GL_TEXTURE_2D, floorTexture);
+
+    glActiveTexture(GL_TEXTURE3);  // 选择另一个纹理单元
+    glBindTexture(GL_TEXTURE_2D, ashTexture);
     // 设置纹理采样器的值
     ballShader.setInt("ballTextureSampler", 1);  // 0 对应于GL_TEXTURE0
     ballShader.setInt("floorTextureSampler", 2); // 1 对应于GL_TEXTURE1
+    ballShader.setInt("ashTextureSampler", 3); // 1 对应于GL_TEXTURE1
     //绑定ballVAO
     glBindVertexArray(ballVAO);
-
-    //ballShader.use();
- /*   unsigned int uniformBlockIndex = glGetUniformBlockIndex(ballShader.ID,"UBO");
-    if (uniformBlockIndex != GL_INVALID_INDEX) {
-        glUniformBlockBinding(ballShader.ID, uniformBlockIndex, 0);
-    }*/
 
     UBOData uboData;
     vector<glm::mat4> modelMatrixs;
@@ -602,11 +603,21 @@ void drawBalls(int floorTextureId,unsigned int ballVAO,Shader ballShader)
         balls[i].updateBallPosition(floorTextureId);
         uboData.modelMatrixs[i] = balls[i].modelMatrix;
         uboData.colors[i] = balls[i].color;
-        uboData.textureIds[i] = (balls[i].textureID== ballTexture)?0:1;
+        uboData.shouldDraw[i] = balls[i].shouldDraw;
+        if (balls[i].textureID == ballTexture) {
+            uboData.textureIds[i] = 1;
+		}
+		else if(balls[i].textureID == floorTextureId){
+			uboData.textureIds[i] = 2;
+		}
+        else if(balls[i].textureID == ashTexture){
+            uboData.textureIds[i] = 3;
+        }
     }   
     ballShader.setMatrix4fArray("modelMatrixs", 30, uboData.modelMatrixs);
     ballShader.setVec3Array("colors", 30, uboData.colors);
     ballShader.setIntArr("textureIds", 30, uboData.textureIds);
+    ballShader.setIntArr("shouldDraw", 30, uboData.shouldDraw);
     // 将balls的vector modelMatrixs传入shader
    /* glBindBuffer(GL_UNIFORM_BUFFER, ubo);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(UBOData), &uboData);*/

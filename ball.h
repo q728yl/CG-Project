@@ -14,7 +14,7 @@ extern glm::vec3 wallColor3;
 extern glm::vec3 wallColor4;
 extern glm::vec3 wallColor5;
 extern glm::mat4 model;
-
+extern int ashTexture;
 extern float deltaTime;
 class Ball {
 public:
@@ -22,10 +22,15 @@ public:
     glm::vec3 velocity;
     glm::vec3 color;
     glm::mat4 modelMatrix;
+    int shouldDraw = 1;
     unsigned int textureID;
     void updateBallPosition(int floorTextureId) {
            velocity.y -= 0.05 * deltaTime;
            position +=velocity * deltaTime;
+           if (textureID == ashTexture&& position.y - 0.01 < -0.049879f) {
+               shouldDraw = 0;
+			   
+           }
             if (position.x - 0.01 < -0.4) {
                position.x = -0.4 + 0.01;
                velocity.x = -velocity.x;

@@ -1,54 +1,54 @@
 ﻿  CG-Project.cpp
-D:\vsProject\CG-Project\CG-Project\ball.h(27,31): warning C4244: “-=”: 从“double”转换到“T”，可能丢失数据
+D:\vsProject\CG-Project\CG-Project\ball.h(28,31): warning C4244: “-=”: 从“double”转换到“T”，可能丢失数据
           with
           [
               T=float
           ]
-D:\vsProject\CG-Project\CG-Project\ball.h(30,34): warning C4305: “=”: 从“double”到“T”截断
+D:\vsProject\CG-Project\CG-Project\ball.h(35,34): warning C4305: “=”: 从“double”到“T”截断
           with
           [
               T=float
           ]
-D:\vsProject\CG-Project\CG-Project\ball.h(35,33): warning C4305: “=”: 从“double”到“T”截断
+D:\vsProject\CG-Project\CG-Project\ball.h(40,33): warning C4305: “=”: 从“double”到“T”截断
           with
           [
               T=float
           ]
-D:\vsProject\CG-Project\CG-Project\ball.h(40,40): warning C4305: “=”: 从“double”到“T”截断
+D:\vsProject\CG-Project\CG-Project\ball.h(45,40): warning C4305: “=”: 从“double”到“T”截断
           with
           [
               T=float
           ]
-D:\vsProject\CG-Project\CG-Project\ball.h(46,33): warning C4305: “=”: 从“double”到“T”截断
+D:\vsProject\CG-Project\CG-Project\ball.h(51,33): warning C4305: “=”: 从“double”到“T”截断
           with
           [
               T=float
           ]
-D:\vsProject\CG-Project\CG-Project\ball.h(52,34): warning C4305: “=”: 从“double”到“T”截断
+D:\vsProject\CG-Project\CG-Project\ball.h(57,34): warning C4305: “=”: 从“double”到“T”截断
           with
           [
               T=float
           ]
-D:\vsProject\CG-Project\CG-Project\ball.h(57,33): warning C4305: “=”: 从“double”到“T”截断
+D:\vsProject\CG-Project\CG-Project\ball.h(62,33): warning C4305: “=”: 从“double”到“T”截断
           with
           [
               T=float
           ]
-D:\vsProject\CG-Project\CG-Project\tumbler.h(10,31): warning C4305: “初始化”: 从“double”到“float”截断
-D:\vsProject\CG-Project\CG-Project\particleSystem.h(28,17): warning C4244: “初始化”: 从“genType”转换到“float”，可能丢失数据
+D:\vsProject\CG-Project\CG-Project\tumbler.h(13,31): warning C4305: “初始化”: 从“double”到“float”截断
+D:\vsProject\CG-Project\CG-Project\particleSystem.h(32,17): warning C4244: “初始化”: 从“genType”转换到“float”，可能丢失数据
           with
           [
               genType=double
           ]
-D:\vsProject\CG-Project\CG-Project\particleSystem.h(64,25): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
-D:\vsProject\CG-Project\CG-Project\particleSystem.h(138,59): warning C4267: “参数”: 从“size_t”转换到“GLsizei”，可能丢失数据
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(55,18): warning C4305: “初始化”: 从“double”到“float”截断
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(467,18): warning C4244: “参数”: 从“double”转换到“GLint”，可能丢失数据
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(613,89): warning C4267: “参数”: 从“size_t”转换到“GLsizei”，可能丢失数据
-D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(613,55): warning C4267: “参数”: 从“size_t”转换到“GLsizei”，可能丢失数据
+D:\vsProject\CG-Project\CG-Project\particleSystem.h(72,25): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+D:\vsProject\CG-Project\CG-Project\particleSystem.h(182,59): warning C4267: “参数”: 从“size_t”转换到“GLsizei”，可能丢失数据
+D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(57,18): warning C4305: “初始化”: 从“double”到“float”截断
+D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(470,18): warning C4244: “参数”: 从“double”转换到“GLint”，可能丢失数据
+D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(624,89): warning C4267: “参数”: 从“size_t”转换到“GLsizei”，可能丢失数据
+D:\vsProject\CG-Project\CG-Project\CG-Project.cpp(624,55): warning C4267: “参数”: 从“size_t”转换到“GLsizei”，可能丢失数据
   正在生成代码
-  1 of 1335 functions (<0.1%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    10 functions had inline decision re-evaluated but remain unchanged
+  45 of 1338 functions ( 3.4%) were compiled, the rest were copied from previous compilation.
+    2 functions were new in current compilation
+    27 functions had inline decision re-evaluated but remain unchanged
   已完成代码的生成
   CG-Project.vcxproj -> D:\vsProject\CG-Project\x64\Release\CG-Project.exe

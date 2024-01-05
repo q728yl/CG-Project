@@ -6,9 +6,13 @@
 #include "shader.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include "ball.h"
+extern float ballRadius;
+extern int ashTexture;
 const int numPoints = 500;
-float avgBallSize = 12.0f;
-const float fireBallRadius = 0.015f;
+float avgBallSize = 15.0f;
+const float fireBallRadius = 0.05f;
+extern vector<Ball> balls;
 
 struct Particle {
     glm::vec3 position;     // 粒子位置
@@ -43,6 +47,8 @@ std::vector<glm::vec3> generateRandomPointsInSphere(int numPoints, float radius)
 class ParticleSystem {
 private:
     std::vector<Particle> particles; // 粒子数组
+    glm::vec3 position;              // 粒子系统位置
+    glm::vec3 velocity;              // 粒子系统速度
     unsigned int VBO, VAO;           // 用于渲染的OpenGL缓冲区对象
     std::vector<glm::vec3> particleVertices; // 用于存储粒子位置的数据
     std::vector<glm::vec4> particleColors;   // 用于存储粒子颜色的数据
@@ -50,15 +56,17 @@ private:
 
 public:
     ParticleSystem() {
+        position = glm::vec3(0.0f, 0.2f, 0.0f);
+        velocity = glm::vec3(0.4f, 0.6f, -0.8f);
         particles.clear();
         particles.resize(numPoints);
         cout << "333sizeof(particles):" << particles.size() << endl;
         std::vector<glm::vec3> pointP = generateRandomPointsInSphere(numPoints, fireBallRadius);
         for(int i = 0; i < numPoints; i++){
 			particles[i].position = pointP[i];
-			particles[i].velocity = glm::vec3(0.0f,0.0f,-0.1f);
+			//particles[i].velocity = glm::vec3(0.4f,0.6f,-0.8f);
             // 计算粒子到球心的距离
-            double distanceToCenter = glm::distance(particles[i].position , glm::vec3(0.0f, 0.2f, 0.0f));
+            double distanceToCenter = glm::distance(particles[i].position , position);
             cout<<"distanceToCenter:"<<distanceToCenter<<endl;
              // 使用线性映射来计算透明度
             float alpha = 1.0f - (distanceToCenter / fireBallRadius);  // 透明度从1到0
@@ -94,10 +102,54 @@ public:
         for (auto& particle : particles) {
             // 更新粒子属性（位置、生命周期等）
             // ...
-            particle.position += particle.velocity * deltaTime;
-            particle.life -=   deltaTime;
-
+            particle.position += velocity * deltaTime;
+            particle.life -= deltaTime;
+            
         }
+        position += velocity * deltaTime;
+       cout<<"球心位置"<<position.x<<" "<<position.y <<" "<< position.z << endl;
+            
+            if (position.z- fireBallRadius< -0.4f) {
+				//particle.position.z = 0.5f;
+                velocity.z = -velocity.z;
+				
+			}
+            if (position.x - fireBallRadius < -0.4) {
+                //particle.position.x = -0.4 + 0.01;
+                velocity.x = -velocity.x;
+               
+                
+            }
+            if (position.x+ fireBallRadius > 0.4) {
+               // particle.position.x = 0.4 - 0.01;
+                velocity.x = -velocity.x;
+               
+            }
+            if (position.y- fireBallRadius < -0.049879f) {
+                //particle.position.y = -0.049879f + 0.01;
+                velocity.y = -velocity.y;
+            }
+            if (position.y+ fireBallRadius > 0.4) {
+                //particle.position.y = 0.4 - 0.01;
+
+                velocity.y = -velocity.y;
+               
+            }
+            if(position.z+ fireBallRadius >0.4) {   
+				velocity.z = -velocity.z;
+            }
+            for (int i = 0; i < 30; i++) {
+                if (glm::distance(position, balls[i].position) < ballRadius+ fireBallRadius) {
+                    //对应小球应当换上灰烬纹理，并着色为灰色，只剩下沿y轴向下的自由落体运动
+                    balls[i].textureID = ashTexture;
+					balls[i].velocity = glm::vec3(0.0f,0.0f,0.0f);
+				}
+            }
+            //判断是否撞不倒翁
+            
+           
+        
+       
         //cout<<"0de位置"<<particles[0].position.z<<endl;
         // 移除生命周期已经结束的粒子
      /*   particles.erase(std::remove_if(particles.begin(), particles.end(),
@@ -118,20 +170,12 @@ public:
 
         // 设置uniform数据
         glBindVertexArray(VAO);
-
-        // 更新uniform数据
-    /*    GLuint verticesLocation = glGetUniformLocation(shader.ID, "vertices");
-        GLuint colorsLocation = glGetUniformLocation(shader.ID, "colors");
-
-        glUniform4fv(verticesLocation, numPoints, particleVertices.data());
-        glUniform4fv(colorsLocation, numPoints, particleColors.data());*/
         shader.setVec4Array("colors", numPoints, particleColors.data());
         shader.setVec3Array("vertices", numPoints, particleVertices.data());
         shader.setFloatArray("sizes", numPoints, particleSizes.data());
 
         cout<<"chuanruzhuoseqi"<<particleVertices[0].z<<endl;
         glEnable(GL_PROGRAM_POINT_SIZE);
-        /*glPointSize(5.0f);*/
         // 在绘制之前启用混合
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -140,6 +184,6 @@ public:
         glDisable(GL_BLEND);
         glBindVertexArray(0);
 
-       // update(deltaTime);
+        update(deltaTime);
     }
 };
