@@ -185,6 +185,19 @@ public:
 			std::cout << "Fail to find uniform " << name << std::endl;
 		}
 	}
+    void setFloatArray(const std::string& name, int count, const float* data) const {
+        glUniform1fv(glGetUniformLocation(ID, name.c_str()), count, data);
+    }
+    void setVec4Array(const std::string& name, unsigned count, const glm::vec4* value) const
+    {
+        GLint location = glGetUniformLocation(ID, name.c_str());
+        if (location != -1) {
+            glUniform4fv(location, count, glm::value_ptr(value[0]));
+        }
+        else {
+            std::cout << "Fail to find uniform " << name << std::endl;
+        }
+    }
     void setIntArr(const std::string& name, unsigned count, const int* value) const
     {
 		GLint location = glGetUniformLocation(ID, name.c_str());

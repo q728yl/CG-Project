@@ -13,19 +13,33 @@
 #include "model.h"
 #include"light.h"
 #include "ball.h"
+#include"particleSystem.h"
 #include <iostream>
 struct UBOData {
     glm::mat4 modelMatrixs[30];
     glm::vec3 colors[30];
     int textureIds[30];
 };
+
+
+//struct Particle {
+//    glm::vec3 position;     // 粒子位置
+//    glm::vec3 velocity;     // 粒子速度
+//    glm::vec4 color;        // 粒子颜色 (使用vec4表示RGBA)
+//    float life;             // 粒子生命周期
+//    float size;             // 粒子大小
+//
+//    Particle()
+//        : position(0.0f), velocity(0.0f), color(1.0f), life(1.0f), size(1.0f) {}
+//};
 float centerPointy = 0.00494931f;
 float floorY = -0.049879f;
 
-glm::vec3 gravityPoint = glm::vec3(0.0f, floorY/2, 0.0f);//重心
+glm::vec3 gravityPoint = glm::vec3(0.0f, -0.03, 0.0f);//重心
 
 glm::vec3 centerPoint = glm::vec3(0.0f, centerPointy, 0.0f);//切分点
-
+glm::vec3 startMousePoint;
+glm::vec3 endMousePoint;
 
 int floorTexture; 
 int ballTexture; 
@@ -40,6 +54,7 @@ glm::vec3 wallColor4;
 glm::vec3 wallColor5;
 float ballRadius = 0.01;
 bool keyS = 0;
+bool keyF = 0;
 std::vector<float> vertices;
 std::vector<unsigned int> indices;
 std::vector<Ball> balls;
@@ -115,6 +130,7 @@ int main()
     Shader wallShader("wall.vs", "wall.fs");
     Shader lightShader("light.vs", "light.fs");
     Shader ballShader("ball.vs", "ball.fs");
+    Shader fireBallShader("fireBall.vs", "fireBall.fs");
  
     //后墙
     std::vector<glm::vec3> wallVertices1 = {
@@ -258,7 +274,7 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glBindVertexArray(0);
-
+    
 
     for (int lat = 0; lat <= Y_SEGMENTS; lat++) {
         float theta = lat * PI / Y_SEGMENTS;
@@ -310,6 +326,7 @@ int main()
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_DYNAMIC_DRAW);
  
 
+    ParticleSystem particleSystem;
 
 
     while (!glfwWindowShouldClose(window))
@@ -373,7 +390,7 @@ int main()
             modelInstances[i].Draw_out(tumblerShader);
             //没正在被鼠标点击的需要更新位置状态
             if (tumblers[i].getCheckedValue() == 0) {
-                cout << i << "没被点击" << endl;
+                //cout << i << "没被点击" << endl;
                 tumblers[i].updateTumbler(modelInstances[i]);
             }
         }
@@ -387,7 +404,14 @@ int main()
                 tumblers[i].checkBallCollapsing(modelInstances[i]);
             }
         }
-        
+        if (keyF) {
+            fireBallShader.use();
+            fireBallShader.setMat4("projection", projection);
+            fireBallShader.setMat4("view", view);
+            fireBallShader.setMat4("model", model);
+            particleSystem.render(fireBallShader,deltaTime);
+            //particleSystem.update(deltaTime);
+        }
       
            
         processInput(window);
@@ -425,6 +449,9 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
         keyS = 1;
     }
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
+        keyF = 1;
+    }
         
 }
 glm::vec3 getViewPos(double x, double y, glm::mat4 pro, glm::mat4 view)
@@ -432,13 +459,13 @@ glm::vec3 getViewPos(double x, double y, glm::mat4 pro, glm::mat4 view)
     // 将屏幕坐标转换为NDC（标准化设备坐标）
     float win_x = (float)x;
     float win_y = (float)SCR_HEIGHT - (float)y ;
-    cout << "屏幕坐标" << win_x << " " << win_y << endl;
+    //cout << "屏幕坐标" << win_x << " " << win_y << endl;
     float win_z;
 
     // 从深度缓冲区中读取深度值
     glReadBuffer(GL_BACK);
     glReadPixels(x, int(win_y), 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &win_z);
-    std::cout << "mouse z set as " << win_z << std::endl;
+    //std::cout << "mouse z set as " << win_z << std::endl;
 
     // 反投影屏幕坐标到世界坐标
     glm::vec3 winCoords(win_x, win_y, win_z);
@@ -456,16 +483,18 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     {
         double xpos, ypos;
         glfwGetCursorPos(window, &xpos, &ypos);
-        std::cout << "button" <<  xpos << "  " << ypos << std::endl;
+        //std::cout << "button" <<  xpos << "  " << ypos << std::endl;
 
         // 转换屏幕坐标为3D世界坐标
         glm::vec3 worldPos = getViewPos(xpos, ypos, projection, view);
+        startMousePoint = worldPos;
+        cout<<"鼠标按下时世界坐标"<<worldPos.x<<" "<<worldPos.y<<" "<<worldPos.z<<endl;
         //tumbler包围盒与鼠标的碰撞检测
         for (int i = 0; i < tumblers.size(); ++i) {
             int checkedValue = tumblers[i].checkMouseClicked(modelInstances[i], worldPos);
             if (checkedValue !=0) {
                 tumblers[i].setCheckedValue(checkedValue);
-                cout << "tumbler " << i << " is checked" << endl;
+              //  cout << "tumbler " << i << " is checked" << endl;
             }
             else {
 
@@ -479,11 +508,12 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
         isDragging = true;
         // 输出或使用worldPos
-        std::cout << "Clicked 3D position: (" << worldPos.x << ", " << worldPos.y << ", " << worldPos.z << ")" << std::endl;
+       // std::cout << "Clicked 3D position: (" << worldPos.x << ", " << worldPos.y << ", " << worldPos.z << ")" << std::endl;
     }
     else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
     {
         isDragging = false;
+        std::cout<<"鼠标松的时候坐标x" <<lastWorldPos.x<<" y"<<lastWorldPos.y<<" z"<<lastWorldPos.z<<endl;
         for (int i = 0; i < tumblers.size(); ++i) {
             tumblers[i].setCheckedValue(0);
         }
@@ -509,7 +539,7 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 
         // 计算鼠标移动的增量
         glm::vec3 delta = currentWorldPos - lastWorldPos;
-        std::cout<<"鼠标移动x"<<delta.x<<" y"<<delta.y<<" z"<<delta.z<<endl;
+        std::cout<<"鼠标世界坐标移动x"<<delta.x<<" y"<<delta.y<<" z"<<delta.z<<endl;
         glm::vec3 tumblerdelta(delta.x,0.0f,delta.z);
         for (int i = 0; i < tumblers.size(); ++i){
             if (tumblers[i].getCheckedValue()==2) {
@@ -521,7 +551,7 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
                 // 计算鼠标拖动向量与重心构成的平面的法线
                 glm::vec3 myGraPoint = glm::vec3(tumblers[i].getModelMatrix() * glm::vec4(gravityPoint, 1.0f));
                 glm::vec3 myGraPointVector = glm::vec3(tumblers[i].getModelMatrix() * glm::vec4(gravityPoint, 1.0f)) -
-                    glm::vec3(tumblers[i].getModelMatrix() * glm::vec4(0, floorY, 0, 1.0f));
+                glm::vec3(tumblers[i].getModelMatrix() * glm::vec4(0, floorY, 0, 1.0f));
 
                 glm::vec3 normal = glm::cross(myGraPointVector, delta); // 直接使用交叉乘积
                 glm::normalize(normal);  // 确保法线是单位向量
@@ -572,9 +602,6 @@ void drawBalls(int floorTextureId,unsigned int ballVAO,Shader ballShader)
         balls[i].updateBallPosition(floorTextureId);
         uboData.modelMatrixs[i] = balls[i].modelMatrix;
         uboData.colors[i] = balls[i].color;
-        if (uboData.colors[i] == glm::vec3(0.0f, 0.0f, 0.0f)) {
-            std::cout << "black" << std::endl;
-        }
         uboData.textureIds[i] = (balls[i].textureID== ballTexture)?0:1;
     }   
     ballShader.setMatrix4fArray("modelMatrixs", 30, uboData.modelMatrixs);
@@ -636,5 +663,5 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 
 void mouse_pos_callback(GLFWwindow* window, double x_pos, double y_pos)
 {
-    std::cout << "move" << x_pos << " " << y_pos << std::endl;
+    //std::cout << "move" << x_pos << " " << y_pos << std::endl;
 }

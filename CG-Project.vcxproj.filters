@@ -53,6 +53,9 @@
     <ClInclude Include="ball.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="particleSystem.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="1.model_loading.fs" />
@@ -67,5 +70,7 @@
     <None Include="simpleDepthShader.fs" />
     <None Include="ball.vs" />
     <None Include="ball.fs" />
+    <None Include="fireball.vs" />
+    <None Include="fireball.fs" />
   </ItemGroup>
 </Project>

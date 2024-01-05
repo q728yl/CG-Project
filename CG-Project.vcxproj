@@ -137,6 +137,7 @@
     <ClInclude Include="light.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="model.h" />
+    <ClInclude Include="particleSystem.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="tumbler.h" />
@@ -147,6 +148,8 @@
     <None Include="1.model_loading.vs" />
     <None Include="ball.fs" />
     <None Include="ball.vs" />
+    <None Include="fireball.fs" />
+    <None Include="fireball.vs" />
     <None Include="light.fs" />
     <None Include="light.vs" />
     <None Include="shadow.fs" />
