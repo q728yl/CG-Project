@@ -128,12 +128,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CG-Project.cpp" />
+    <ClCompile Include="Flame.cpp" />
     <ClCompile Include="light.cpp" />
     <ClCompile Include="model.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ball.h" />
     <ClInclude Include="camera.h" />
+    <ClInclude Include="Flame.h" />
     <ClInclude Include="light.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="model.h" />
@@ -152,10 +154,15 @@
     <None Include="fireball.vs" />
     <None Include="light.fs" />
     <None Include="light.vs" />
+    <None Include="Render.fs" />
+    <None Include="Render.vs" />
     <None Include="shadow.fs" />
     <None Include="shadow.vs" />
     <None Include="simpleDepthShader.fs" />
     <None Include="simpleDepthShader.vs" />
+    <None Include="Update.fs" />
+    <None Include="Update.gs" />
+    <None Include="Update.vs" />
     <None Include="wall.fs" />
     <None Include="wall.vs" />
   </ItemGroup>

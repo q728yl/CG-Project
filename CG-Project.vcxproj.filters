@@ -24,6 +24,9 @@
     <ClCompile Include="light.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Flame.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="shader.h">
@@ -56,6 +59,9 @@
     <ClInclude Include="particleSystem.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Flame.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="1.model_loading.fs" />
@@ -72,5 +78,10 @@
     <None Include="ball.fs" />
     <None Include="fireball.vs" />
     <None Include="fireball.fs" />
+    <None Include="Render.vs" />
+    <None Include="Render.fs" />
+    <None Include="Update.fs" />
+    <None Include="Update.gs" />
+    <None Include="Update.vs" />
   </ItemGroup>
 </Project>

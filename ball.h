@@ -4,7 +4,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#pragma once
+
 
 #include <glm/glm.hpp>
 #include<vector>

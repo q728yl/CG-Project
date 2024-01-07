@@ -1,8 +1,7 @@
+#pragma once
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include "model.h"
-
-
 
 #include "ball.h"
 extern vector<Ball> balls;
@@ -16,6 +15,7 @@ const float resistanceFactor = 0.1f;  // 抵抗力矩因子
 extern float deltaTime;
 const float ballGravity = 1.0f;
 extern float ballRadius;
+extern std::vector<Model> modelInstances;
 enum class Face {
     NONE,
     LEFT,
@@ -218,8 +218,49 @@ public:
 		glm::vec3 normal = glm::cross(v1, v2);
 		return normal;
     }
- 
+    //检测火球是否与模型相交
+    bool checkFireBallCollapse(glm::vec3 ballCenter, float fireballRadius, glm::vec3& newNormal) {
+        cout<<"火球中心坐标"<<ballCenter.x<<" "<<ballCenter.y<<" "<<ballCenter.z<<endl;
+        Model model = modelInstances[0];
+        glm::vec3 min = glm::vec3(model.boundingBox.minX, model.boundingBox.minY, model.boundingBox.minZ);
+        glm::vec3 max = glm::vec3(model.boundingBox.maxX, model.boundingBox.maxY, model.boundingBox.maxZ);
+        glm::vec4 modelCoords = glm::inverse(modelMatrix) * glm::vec4(ballCenter, 1.0f);
 
+        glm::vec3 newballCenter = glm::vec3(modelCoords);
+        cout<<"newballCenter"<<newballCenter.x<<" "<<newballCenter.y<<" "<<newballCenter.z<<endl;
+        //检测球心是否在包围盒内
+        glm::vec3 collapsPoint = glm::vec3(-1, -1, -1);
+        Face collisionFace = Face::NONE;
+        if (checkSphereCubeIntersection(newballCenter, fireballRadius, min, max, collapsPoint, collisionFace)) {
+            //计算碰撞点在model空间的法向量
+            cout<<"碰撞11111111111111111111111"<<endl;
+            glm::vec3 normal = glm::vec3(0.0f);
+
+            if (collisionFace == Face::LEFT) {
+                normal = glm::vec3(-1.0, 0, 0);
+            }
+            else if (collisionFace == Face::RIGHT) {
+                normal = glm::vec3(1.0, 0, 0);
+            }
+            else if (collisionFace == Face::TOP) {
+                normal = glm::vec3(0, 1.0, 0);
+            }
+            else if (collisionFace == Face::BOTTOM) {
+                normal = glm::vec3(0, -1.0, 0);
+            }
+            else if (collisionFace == Face::FRONT) {
+                normal = glm::vec3(0, 0, -1.0);
+            }
+            else if (collisionFace == Face::BACK) {
+                normal = glm::vec3(0, 0, 1.0);
+            }
+            newNormal = glm::vec3(modelMatrix * glm::vec4(normal, 1.0));
+            //cout<<"newNormal2222222222222222"<<newNormal.x<<" "<<newNormal.y<<" "<<newNormal.z<<endl;
+            updateBallToTumbler(collapsPoint);
+            return true;
+        }
+        return false;
+    }
  
     void checkBallCollapsing(Model& model) {
         glm::vec3 min = glm::vec3(model.boundingBox.minX, model.boundingBox.minY, model.boundingBox.minZ);
@@ -245,27 +286,12 @@ public:
                     normal = glm::vec3(1.0, 0, 0);
 				}
                 else if (collisionFace == Face::TOP) {
-                 /*   vector<glm::vec3> points;
-                    points.push_back(glm::vec3(min.x, max.y, min.z));
-                    points.push_back(glm::vec3(max.x, max.y, min.z));
-                    points.push_back(glm::vec3(min.x, max.y, max.z));
-                    normal = calNoramlOfTri(points);*/
                     normal = glm::vec3(0, 1.0, 0);
 				}
                 else if (collisionFace == Face::BOTTOM) {
-                 /*   vector<glm::vec3> points;
-                    points.push_back(glm::vec3(min.x, min.y, min.z));
-                    points.push_back(glm::vec3(max.x, min.y, min.z));
-                    points.push_back(glm::vec3(min.x, min.y, max.z));
-                    normal = calNoramlOfTri(points);*/
                     normal = glm::vec3(0, -1.0, 0);
 				}
                 else if (collisionFace == Face::FRONT) {
-                /*    vector<glm::vec3> points;
-                    points.push_back(glm::vec3(min.x, min.y, min.z));
-                    points.push_back(glm::vec3(max.x, min.y, min.z));
-                    points.push_back(glm::vec3(min.x, max.y, min.z));
-                    normal = calNoramlOfTri(points);*/
                     normal = glm::vec3(0, 0, -1.0);
 				}
                 else if (collisionFace == Face::BACK) {
@@ -273,8 +299,6 @@ public:
 				}
                 glm::vec3 newNormal = modelMatrix * glm::vec4(normal, 1.0);
                 balls[i].position+=glm::normalize(newNormal)*ballRadius*0.5f;
-
-				//balls[i].position += balls[i].velocity * (5*deltaTime);
 				updateBallToTumbler(collapsPoint);
             }
 

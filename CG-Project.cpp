@@ -6,6 +6,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "camera.h"
+#include "Flame.h"
 #include "shader.h"
 #include"wall.h"
 #include "tumbler.h"
@@ -22,29 +23,20 @@ struct UBOData {
     int shouldDraw[30];
 };
 
-
-//struct Particle {
-//    glm::vec3 position;     // 粒子位置
-//    glm::vec3 velocity;     // 粒子速度
-//    glm::vec4 color;        // 粒子颜色 (使用vec4表示RGBA)
-//    float life;             // 粒子生命周期
-//    float size;             // 粒子大小
-//
-//    Particle()
-//        : position(0.0f), velocity(0.0f), color(1.0f), life(1.0f), size(1.0f) {}
-//};
 float centerPointy = 0.00494931f;
 float floorY = -0.049879f;
-
+float fireBallRadius = 0.04f;
 glm::vec3 gravityPoint = glm::vec3(0.0f, -0.03, 0.0f);//重心
 
 glm::vec3 centerPoint = glm::vec3(0.0f, centerPointy, 0.0f);//切分点
 glm::vec3 startMousePoint;
 glm::vec3 endMousePoint;
-
+//float maxZ = -2.0f;
 int floorTexture; 
 int ballTexture; 
 int ashTexture;
+int sparkTexture;
+int particleTexture;
 std::vector<Tumbler> tumblers;
 bool isDragging = false;
 glm::vec3 lastWorldPos;
@@ -89,12 +81,13 @@ float lastFrame = 0.0f;
 
 int main()
 {
+  
 
     // glfw: initialize and configure
     // ------------------------------
     glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // glfw window creation
@@ -119,12 +112,16 @@ int main()
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
+    //opengl version
+    std::cout << "Opengl " << GLVersion.major << "." << GLVersion.minor << std::endl;
     // configure global opengl state
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
 
     // build and compile shaders
     // -------------------------
+   
+ 
     glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);  // 你的光源颜色
     // lighting
     glm::vec3 lightPos(0.0f, 0.4f, 0.0f);
@@ -227,6 +224,10 @@ int main()
     floorTexture = TextureFromFile("floor.png", "./");
     ballTexture = TextureFromFile("ball.png", "./");
     ashTexture  = TextureFromFile("ash.png", "./");
+    sparkTexture = TextureFromFile("flame.bmp", "./");
+    particleTexture = TextureFromFile("particle.bmp", "./");
+  
+
     // 初始化30个小球
     for (int i = 0; i < 30; ++i) {
         Ball ball;
@@ -329,13 +330,15 @@ int main()
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_DYNAMIC_DRAW);
  
 
-    ParticleSystem particleSystem;
-
+    //ParticleSystem particleSystem;
+   
+    Flame::Flame flame;
 
     while (!glfwWindowShouldClose(window))
     {
         glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        processInput(window);
         float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;  
@@ -386,6 +389,7 @@ int main()
         tumblerShader.setMat4("view", view);
         // 渲染循环中遍历所有模型实例
         for (size_t i = 0; i < 5; ++i) {
+           
             tumblerShader.setMat4("model", tumblers[i].getModelMatrix());
           /*  glm::vec3 position = glm::vec3(tumblers[i].getModelMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
             std::cout << "tumbler " << i << " position:" << position.x << " " << position.y << " " << position.z << std::endl;*/
@@ -407,17 +411,37 @@ int main()
                 tumblers[i].checkBallCollapsing(modelInstances[i]);
             }
         }
+        
         if (keyF) {
-            fireBallShader.use();
+
+            flame.Render(deltaTime, model, view, projection);
+           /* fireBallShader.use();
             fireBallShader.setMat4("projection", projection);
             fireBallShader.setMat4("view", view);
-            fireBallShader.setMat4("model", model);
-            particleSystem.render(fireBallShader,deltaTime);
-            //particleSystem.update(deltaTime);
+            fireBallShader.setMat4("model", model);*/
+        
+          /*  for (int i = 0; i < 5; i++) {
+                glm::vec3 normal(0.0f, 0.0f, 0.0f);
+                if (tumblers[i].checkFireBallCollapse(particleSystem.position, fireBallRadius, normal)==1) {
+                    cout<<"撞到不倒翁----------------------------------------"<<i<<endl;
+                    particleSystem.velocity *= -0.9;
+					particleSystem.position += glm::normalize(normal) * fireBallRadius * 0.5f;
+                    break;
+                }
+                if (particleSystem.position.z > maxZ) {
+                	maxZ = particleSystem.position.z;
+                    
+                }
+                cout << "最大z" << maxZ << endl;
+                
+            }	*/
+           /* particleSystem.render(fireBallShader, deltaTime);*/
+          
         }
+
       
            
-        processInput(window);
+      
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);

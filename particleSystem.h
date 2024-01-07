@@ -1,4 +1,7 @@
 #pragma once
+
+#include "tumbler.h"
+#include "ball.h"
 #include <glad/glad.h> // holds all OpenGL type declarations
 #include <string>
 #include <vector>
@@ -6,12 +9,13 @@
 #include "shader.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include "ball.h"
+float maxZ = -2.0f;
 extern float ballRadius;
+extern vector<Tumbler> tumblers;
 extern int ashTexture;
 const int numPoints = 500;
 float avgBallSize = 15.0f;
-const float fireBallRadius = 0.05f;
+extern float fireBallRadius;
 extern vector<Ball> balls;
 
 struct Particle {
@@ -29,12 +33,12 @@ std::vector<glm::vec3> generateRandomPointsInSphere(int numPoints, float radius)
     for (int i = 0; i < numPoints; ++i) {
         // 在 [-radius, radius] 范围内生成随机坐标
         float x = glm::linearRand(-radius, radius);
-        float y = glm::linearRand(-radius+0.2, radius+0.2);
+        float y = glm::linearRand(-radius+0.05, radius+0.05);
         float z = glm::linearRand(-radius, radius);
 
         // 检查点是否在球内部
         glm::vec3 point(x, y, z);
-        if (glm::length(point- glm::vec3(0.0f, 0.2f, 0.0f)) <= radius) {
+        if (glm::length(point- glm::vec3(0.0f, 0.05f, 0.0f)) <= radius) {
             points.push_back(point);
         }
         else {
@@ -45,7 +49,7 @@ std::vector<glm::vec3> generateRandomPointsInSphere(int numPoints, float radius)
     return points;
 }
 class ParticleSystem {
-private:
+public:
     std::vector<Particle> particles; // 粒子数组
     glm::vec3 position;              // 粒子系统位置
     glm::vec3 velocity;              // 粒子系统速度
@@ -56,8 +60,8 @@ private:
 
 public:
     ParticleSystem() {
-        position = glm::vec3(0.0f, 0.2f, 0.0f);
-        velocity = glm::vec3(0.4f, 0.6f, -0.8f);
+        position = glm::vec3(0.0f, 0.05f, 0.0f);
+        velocity = glm::vec3(0.0f, 0.0f, -0.8f);
         particles.clear();
         particles.resize(numPoints);
         cout << "333sizeof(particles):" << particles.size() << endl;
@@ -99,15 +103,9 @@ public:
     // 更新粒子系统
     void update(float deltaTime) {
       //  std::cout<<"11"<<"sizeof(particles):"<< particles.size() <<std::endl;
-        for (auto& particle : particles) {
-            // 更新粒子属性（位置、生命周期等）
-            // ...
-            particle.position += velocity * deltaTime;
-            particle.life -= deltaTime;
-            
-        }
+      
         position += velocity * deltaTime;
-       cout<<"球心位置"<<position.x<<" "<<position.y <<" "<< position.z << endl;
+        cout<<"球心位置"<<position.x<<" "<<position.y <<" "<< position.z << endl;
             
             if (position.z- fireBallRadius< -0.4f) {
 				//particle.position.z = 0.5f;
@@ -146,7 +144,29 @@ public:
 				}
             }
             //判断是否撞不倒翁
-            
+            for (int i = 0; i < 5; i++) {
+               glm::vec3 normal(0.0f, 0.0f, 0.0f);
+               Tumbler tumbler = tumblers[i];
+               if (tumbler.checkFireBallCollapse(position, fireBallRadius,normal)) {				  
+                   velocity *= -0.9;
+                   position += glm::normalize(normal) * fireBallRadius;
+                   cout<<"不倒翁被撞了"<<endl;
+                   if (position.z > maxZ) {
+                       maxZ = position.z;
+
+                   }
+                   cout << "最大z" << maxZ << endl;
+                   break;
+			   }
+              
+            }
+            for (auto& particle : particles) {
+                // 更新粒子属性（位置、生命周期等）
+                // ...
+                particle.position += velocity * deltaTime;
+                particle.life -= deltaTime;
+
+            }
            
         
        
@@ -158,6 +178,7 @@ public:
 
     // 渲染粒子系统
     void render(Shader& shader,float deltaTime) {
+        update(deltaTime);
 
         particleVertices.clear();
         particleColors.clear();
@@ -184,6 +205,6 @@ public:
         glDisable(GL_BLEND);
         glBindVertexArray(0);
 
-        update(deltaTime);
+      
     }
 };
